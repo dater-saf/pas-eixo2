@@ -42,7 +42,8 @@ header .sub{margin:.3rem 0 0;color:var(--azul-esc);font-weight:500;font-size:.95
 .legenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--text-secondary);margin:0 0 8px}
 .legenda span{display:inline-flex;align-items:center;gap:6px}
 .legenda i{width:12px;height:12px;border-radius:3px;display:inline-block}
-svg{display:block;width:100%;height:auto;overflow:visible}
+svg{display:block;width:100%;max-width:640px;height:auto;overflow:visible}
+#tEstComp td:first-child{white-space:nowrap}
 svg text{font-family:Inter,system-ui,sans-serif}
 .alvo{fill:transparent;cursor:default}
 .alvo:hover{fill:rgba(28,63,242,.06)}
@@ -59,6 +60,18 @@ th.n{text-align:right}
 .st.good b{background:var(--good)} .st.warning b{background:var(--warning);color:#3d2c00} .st.serious b{background:var(--serious)} .st.neutro b{background:#b9b8b2}
 .vazio{color:var(--text-muted);font-size:.88rem;padding:18px 0;text-align:center}
 .semresp{color:var(--text-muted);font-style:italic}
+
+.abas{display:inline-flex;border:1px solid var(--azul);border-radius:8px;overflow:hidden}
+.abas button{border:0;border-radius:0;background:#fff;color:var(--azul);padding:6px 14px;font-weight:600}
+.abas button.ativa{background:var(--azul);color:#fff}
+.matriz td.cel{text-align:center;font-variant-numeric:tabular-nums;font-size:.8rem;border:2px solid var(--surface-1);border-radius:6px;white-space:nowrap}
+.matriz tr.linha-estado{cursor:pointer}
+.matriz tr.linha-estado:hover td:first-child{color:var(--azul);text-decoration:underline}
+.matriz tr.sel td:first-child{color:var(--azul)}
+.hist td:first-child{color:var(--text-secondary);width:30%}
+.hist th:not(:first-child){min-width:140px}
+.up{color:var(--good)} .down{color:var(--critical)}
+.oculto{display:none!important}
 footer{color:var(--text-muted);font-size:.78rem;text-align:center;padding:10px 0 30px}
 </style>
 </head>
@@ -70,12 +83,15 @@ footer{color:var(--text-muted);font-size:.78rem;text-align:center;padding:10px 0
 
 <main class="wrap">
   <div class="barra-ctrl">
-    <label>Ciclo: <select id="selCiclo"></select></label>
+    <div class="abas" role="tablist"><button type="button" class="ativa" data-modo="ciclo">Panorama do ciclo</button><button type="button" data-modo="estado">Avanço por estado</button></div>
+    <label id="lblCiclo">Ciclo: <select id="selCiclo"></select></label>
+    <label id="lblEstado" class="oculto">Estado: <select id="selEstado"></select></label>
     <span class="status-at"><span class="pulso" id="pulso"></span><span id="txtAt">Carregando…</span></span>
     <button type="button" id="btnAt">Atualizar agora</button>
   </div>
   <div id="aviso"></div>
 
+  <div id="vCiclo">
   <section class="kpis" id="kpis"></section>
 
   <div class="grade">
@@ -100,6 +116,27 @@ footer{color:var(--text-muted);font-size:.78rem;text-align:center;padding:10px 0
 
   <div class="card"><h2>Dados por estado</h2><p class="nota">Último envio de cada estado no ciclo selecionado</p>
     <div class="tabwrap" id="tDados"></div></div>
+  </div>
+
+  <div id="vEstado" class="oculto">
+    <div class="card"><h2>Avanço dos estados ao longo dos ciclos</h2><p class="nota">Redes constituídas / territórios e cobertura em cada ciclo. Clique num estado para ver o detalhe.</p>
+      <div class="tabwrap" id="tMatriz"></div></div>
+    <h2 id="tituloEstado" style="font-family:Lexend,sans-serif;color:var(--azul);font-size:1.3rem;margin:22px 0 10px"></h2>
+    <section class="kpis" id="kpisEstado"></section>
+    <div class="grade">
+      <div class="card"><h2>Redes constituídas</h2><p class="nota">Em relação ao total de territórios do estado em cada ciclo</p>
+        <div class="legenda"><span><i style="background:var(--series-1)"></i>Redes constituídas</span><span><i style="background:var(--text-muted);height:2px"></i>Total de territórios</span></div>
+        <div id="gEstRedes"></div></div>
+      <div class="card"><h2>Planos Safras Territoriais por situação</h2><p class="nota">Cada barra é um ciclo</p>
+        <div class="legenda" id="legEstPst"></div><div id="gEstPst"></div></div>
+    </div>
+    <div class="card"><h2>Projetos Indutores por etapa</h2><p class="nota">Cada barra é um ciclo: o avanço aparece quando a parte escura (contratado) cresce</p>
+      <div class="legenda" id="legEstProj"></div><div id="gEstProj"></div></div>
+    <div class="card"><h2>Compromissos ao longo dos ciclos</h2><p class="nota">Formação, sistemas de informação, ATER Digital e ações complementares</p>
+      <div class="tabwrap" id="tEstComp"></div></div>
+    <div class="card"><h2>Histórico das respostas</h2><p class="nota">Todas as informações do estado, lado a lado por ciclo (nome e e-mail do ponto focal não são exibidos)</p>
+      <div class="tabwrap" id="tEstHist"></div></div>
+  </div>
 </main>
 <div id="tip"></div>
 <footer>DATER/SAF/MDA · GT Eixo 2 – ATER e Crédito · Fonte: formulário de monitoramento do Eixo 2</footer>
@@ -124,14 +161,14 @@ const STATUS={
 const ICONE={good:'✓',warning:'…',serious:'✕',neutro:'?'};
 
 /* ============ ESTADO ============ */
-let DADOS=null, ultimoEnvio=null, cicloSel=null, demo=false;
+let DADOS=null, ultimoEnvio=null, cicloSel=null, demo=false, modo='ciclo', estadoSel=null;
 const $=s=>document.querySelector(s);
 const num=x=>{const k=Number(x);return x===''||x==null||isNaN(k)?null:k;};
 const soma=(arr,f)=>arr.reduce((s,o)=>s+(num(f(o))||0),0);
 const fmt=n=>n==null?'—':n.toLocaleString('pt-BR');
 const pct=(a,b)=>b?Math.round(a/b*1000)/10:null;
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const rotCiclo=c=>{const m=/^(\d{4})-([ST])(\d)$/.exec(c||'');if(!m)return c;return m[2]==='S'?`${m[3]}º sem. ${m[1]}`:`${m[3]}º trim. ${m[1]}`;};
+const rotCiclo=c=>{const m=/^(\d{4})-([STQ])(\d)$/.exec(c||'');if(!m)return c;return `${m[3]}º ${{S:'sem.',T:'trim.',Q:'quadrim.'}[m[2]]} ${m[1]}`;};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ============ CARGA ============ */
@@ -147,7 +184,7 @@ async function carregar(forcar){
     const mudou = forcar || !DADOS || d.ultimo_envio!==ultimoEnvio;
     ultimoEnvio=d.ultimo_envio;
     $('#txtAt').textContent=`Verificado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`+(d.ultimo_envio?` · último envio: ${new Date(d.ultimo_envio).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`:'');
-    if(mudou){ DADOS=d; montarCiclos(); desenhar(); }
+    if(mudou){ DADOS=d; montarCiclos(); montarEstados(); desenhar(); }
   }catch(err){
     $('#pulso').classList.add('off');
     $('#txtAt').textContent='Sem conexão com a planilha ('+err.message+'). Nova tentativa em '+CONFIG.INTERVALO_MIN+' min.';
@@ -164,6 +201,10 @@ function montarCiclos(){
 /* ============ DESENHO ============ */
 function desenhar(){
   $('#aviso').innerHTML=demo?'<div class="demo">Dados de exemplo: o endereço da planilha (ENDPOINT) ainda não foi configurado neste painel.</div>':'';
+  $('#vCiclo').classList.toggle('oculto',modo!=='ciclo'); $('#vEstado').classList.toggle('oculto',modo!=='estado');
+  $('#lblCiclo').classList.toggle('oculto',modo!=='ciclo'); $('#lblEstado').classList.toggle('oculto',modo!=='estado');
+  $$('.abas button').forEach(b=>b.classList.toggle('ativa',b.dataset.modo===modo));
+  if(modo==='estado') return desenharEstado();
   const doCiclo=DADOS.situacao.filter(o=>o.ciclo===cicloSel);
   const projs=DADOS.projetos.filter(p=>p.ciclo===cicloSel);
   const ciclos=[...new Set(DADOS.situacao.map(o=>o.ciclo))].sort();
@@ -282,7 +323,7 @@ function grafEmpilhado(sel,selLeg,grupos,cats,unid){
     });
     svg.append(s('text',{x:x+6,y:y+bh-4,'font-size':11,'font-weight':600,fill:css('--text-primary')},sumv(g)));
     const alvo=s('rect',{x:0,y:y-6,width:L,height:linha,class:'alvo'}); svg.append(alvo);
-    dica(alvo,`<b>${esc(g.rot)}</b><br>`+cats.filter(([k])=>g.vals[k]>0).map(([k,l])=>`${l}: ${g.vals[k]}`).join('<br>')+(g.estados?`<br>Estados: ${[...g.estados].join(', ')}`:''));
+    dica(alvo,`<b>${esc(g.rot)}</b><br>`+cats.filter(([k])=>g.vals[k]>0).map(([k,l])=>`${l}: ${g.vals[k]}`).join('<br>')+(g.estados&&g.estados.size?`<br>Estados: ${[...g.estados].join(', ')}`:'')+(g.detalhe&&g.detalhe.size?`<br>Projetos: ${esc([...g.detalhe].join('; '))}`:''));
   });
   box.append(svg);
 }
@@ -306,19 +347,144 @@ function tabDados(rows){
   $('#tDados').innerHTML=rows.length?h+'</tbody></table>':'<div class="vazio">Nenhum envio neste ciclo.</div>';
 }
 
+/* ============ AVANÇO POR ESTADO ============ */
+const $$=s=>[...document.querySelectorAll(s)];
+function montarEstados(){
+  const sel=$('#selEstado');
+  const comDados=ESTADOS.filter(e=>DADOS.situacao.some(o=>o.q01_estado===e));
+  sel.innerHTML=ESTADOS.map(e=>`<option value="${esc(e)}">${esc(e)}${comDados.includes(e)?'':' (sem envios)'}</option>`).join('');
+  if(!estadoSel||!ESTADOS.includes(estadoSel)) estadoSel=comDados[0]||ESTADOS[0];
+  sel.value=estadoSel;
+}
+const SEQ=['#eef4fd','#cde2fb','#9ec5f4','#5598e7','#256abf','#104281'];
+function corCobertura(p){ if(p==null) return null; const i=Math.min(SEQ.length-1,Math.floor(p/20)+1); return [SEQ[i], i>=4?'#fff':css('--text-primary')]; }
+
+function desenharEstado(){
+  const ciclos=[...new Set(DADOS.situacao.map(o=>o.ciclo))].sort();
+  tabMatriz(ciclos);
+  const rows=DADOS.situacao.filter(o=>o.q01_estado===estadoSel).sort((a,b)=>String(a.ciclo).localeCompare(b.ciclo));
+  $('#tituloEstado').textContent=estadoSel;
+  const alvos=['#kpisEstado','#gEstRedes','#gEstPst','#gEstProj','#tEstComp','#tEstHist'];
+  if(!rows.length){ alvos.forEach(s=>$(s).innerHTML=''); $('#kpisEstado').innerHTML='<div class="vazio">Este estado ainda não enviou respostas.</div>'; return; }
+  kpisEstado(rows);
+  grafEstRedes(rows);
+  grafEmpilhado('#gEstPst','#legEstPst',rows.map(o=>({rot:rotCiclo(o.ciclo),vals:Object.fromEntries(PST.map(([k])=>[k,num(o['q12_pst_'+k])||0]))})),PST,'planos');
+  grafEmpilhado('#gEstProj','#legEstProj',rows.map(o=>{const ps=DADOS.projetos.filter(p=>p.protocolo===o.protocolo);
+    return {rot:rotCiclo(o.ciclo),vals:Object.fromEntries(ETAPAS.map(([k])=>[k,soma(ps,p=>p['etapa_'+k])])),detalhe:new Set(ps.map(p=>p.projeto_nome||p.projeto))};}),ETAPAS,'projetos');
+  tabEstComp(rows);
+  tabEstHist(rows);
+}
+
+function tabMatriz(ciclos){
+  let h='<table class="matriz"><thead><tr><th>Estado</th>'+ciclos.map(c=>`<th style="text-align:center">${esc(rotCiclo(c))}</th>`).join('')+'<th class="n">Variação de redes</th></tr></thead><tbody>';
+  ESTADOS.forEach(e=>{
+    const porC=ciclos.map(c=>DADOS.situacao.find(o=>o.ciclo===c&&o.q01_estado===e));
+    const val=porC.filter(Boolean);
+    h+=`<tr class="linha-estado${e===estadoSel?' sel':''}" data-estado="${esc(e)}"><td><b>${e}</b></td>`;
+    porC.forEach(o=>{
+      if(!o){h+='<td class="cel semresp">—</td>';return;}
+      const t=num(o.q04_territorios_total)||0, r=num(o.q06_redes_constituidas)||0, p=pct(r,t), cor=corCobertura(p);
+      h+=`<td class="cel" style="${cor?`background:${cor[0]};color:${cor[1]}`:''}" title="${esc(rotCiclo(o.ciclo))}: ${r} de ${t} territórios com rede">${r}/${t} · ${p==null?'—':p.toLocaleString('pt-BR')+'%'}</td>`;
+    });
+    let v='—';
+    if(val.length>1){const d=(num(val[val.length-1].q06_redes_constituidas)||0)-(num(val[0].q06_redes_constituidas)||0); v=d>0?`<span class="up">▲ +${d}</span>`:d<0?`<span class="down">▼ ${d}</span>`:'= 0';}
+    h+=`<td class="n">${v}</td></tr>`;
+  });
+  h+='</tbody></table><div class="legenda" style="margin-top:10px">Cobertura: '+['0–19%','20–39%','40–59%','60–79%','80–100%'].map((l,i)=>`<span><i style="background:${SEQ[i+1]}"></i>${l}</span>`).join('')+'</div>';
+  $('#tMatriz').innerHTML=h;
+  $$('#tMatriz tr.linha-estado').forEach(tr=>tr.onclick=()=>{estadoSel=tr.dataset.estado;$('#selEstado').value=estadoSel;desenhar();$('#tituloEstado').scrollIntoView({behavior:'smooth',block:'start'});});
+}
+
+function kpisEstado(rows){
+  const u=rows[rows.length-1], a=rows.length>1?rows[rows.length-2]:null;
+  const projU=DADOS.projetos.filter(p=>p.protocolo===u.protocolo), projA=a?DADOS.projetos.filter(p=>p.protocolo===a.protocolo):[];
+  const f={
+    redes:o=>num(o.q06_redes_constituidas), cob:o=>pct(num(o.q06_redes_constituidas)||0,num(o.q04_territorios_total)),
+    sem:o=>num(o.q07_territorios_sem_rede), pst:o=>(num(o.q12_pst_concluidos)||0)+(num(o.q12_pst_em_implementacao)||0)
+  };
+  const contr=ps=>soma(ps,p=>p.etapa_contratado);
+  const delta=(x,y,suf='',inverso=false)=>{ if(a==null||x==null||y==null) return ''; const d=Math.round((x-y)*10)/10;
+    const bom=inverso?d<0:d>0; return `<div class="delta ${d===0?'':bom?'up':'down'}">${d>0?'▲ +':d<0?'▼ ':'= '}${d===0?'sem variação':d.toLocaleString('pt-BR')+suf} desde ${esc(rotCiclo(a.ciclo))}</div>`; };
+  const t=[
+    ['Ciclos respondidos',rows.length,`de ${rotCiclo(rows[0].ciclo)} a ${rotCiclo(u.ciclo)}`,''],
+    ['Redes constituídas',fmt(f.redes(u)),`de ${fmt(num(u.q04_territorios_total))} territórios`,delta(f.redes(u),a&&f.redes(a))],
+    ['Cobertura de redes',f.cob(u)==null?'—':f.cob(u).toLocaleString('pt-BR')+'%','no ciclo mais recente',delta(f.cob(u),a&&f.cob(a),' p.p.')],
+    ['Territórios sem rede',fmt(f.sem(u)),'a constituir',delta(f.sem(u),a&&f.sem(a),'',true)],
+    ['Planos Safras concluídos ou em implementação',fmt(f.pst(u)),`de ${esc(u.q11_pst_previstos??'—')} previstos`,delta(f.pst(u),a&&f.pst(a))],
+    ['Projetos Indutores contratados',fmt(contr(projU)),'no ciclo mais recente',a?delta(contr(projU),contr(projA)):'']
+  ];
+  $('#kpisEstado').innerHTML=t.map(([r,v,c,d])=>`<div class="kpi"><div class="rot">${r}</div><div class="val">${v}</div><div class="comp">${c}</div>${d}</div>`).join('');
+}
+
+function grafEstRedes(rows){
+  const box=$('#gEstRedes'); box.innerHTML='';
+  const pts=rows.map(o=>({c:o.ciclo,R:num(o.q06_redes_constituidas)||0,T:num(o.q04_territorios_total)||0}));
+  const W=520,H=250,L=36,Rm=44,T=18,B=34;
+  const max=Math.max(1,...pts.map(p=>Math.max(p.R,p.T)));
+  const passoY=[1,2,5,10,20,25,50,100].find(k=>k*4>=max*1.1)||Math.ceil(max/4), topo=passoY*4;
+  const sx=i=>pts.length===1?L+(W-L-Rm)/2:L+(W-L-Rm)*i/(pts.length-1), sy=v=>T+(H-T-B)*(1-v/topo);
+  const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Redes constituídas por ciclo'});
+  for(let k=0;k<=4;k++){const v=passoY*k,y=sy(v);svg.append(s('line',{x1:L,x2:W-Rm,y1:y,y2:y,stroke:css('--grid')}));svg.append(s('text',{x:L-6,y:y+4,'font-size':10,fill:css('--text-muted'),'text-anchor':'end'},v));}
+  const linha=(k,cor,tr)=>{ if(pts.length>1) svg.append(s('polyline',{points:pts.map((p,i)=>`${sx(i)},${sy(p[k])}`).join(' '),fill:'none',stroke:cor,'stroke-width':2,'stroke-dasharray':tr||'','stroke-linejoin':'round'})); };
+  linha('T',css('--text-muted'),'5 4'); linha('R',css('--series-1'));
+  pts.forEach((p,i)=>{
+    svg.append(s('circle',{cx:sx(i),cy:sy(p.R),r:5,fill:css('--series-1'),stroke:css('--surface-1'),'stroke-width':2}));
+    svg.append(s('text',{x:sx(i),y:sy(p.R)-11,'font-size':12,'font-weight':600,fill:css('--text-primary'),'text-anchor':'middle'},p.R));
+    svg.append(s('text',{x:sx(i),y:H-12,'font-size':11,fill:css('--text-secondary'),'text-anchor':'middle'},rotCiclo(p.c)));
+    const w=pts.length===1?120:(W-L-Rm)/(pts.length-1);
+    const alvo=s('rect',{x:sx(i)-w/2,y:T,width:w,height:H-T-B,class:'alvo'}); svg.append(alvo);
+    dica(alvo,`<b>${rotCiclo(p.c)}</b><br>${p.R} redes constituídas de ${p.T} territórios<br>Cobertura: ${pct(p.R,p.T)??'—'}%`);
+  });
+  if(pts.length) svg.append(s('text',{x:sx(pts.length-1)+8,y:sy(pts[pts.length-1].T)+4,'font-size':10,fill:css('--text-muted')},pts[pts.length-1].T));
+  box.append(svg);
+  if(pts.length===1) box.append(Object.assign(document.createElement('p'),{className:'nota',textContent:'A linha de evolução aparece a partir do segundo ciclo respondido.'}));
+}
+
+function tabEstComp(rows){
+  let h='<table><thead><tr><th>Ciclo</th>'+COMPROMISSOS.map(([,l])=>`<th>${l}</th>`).join('')+'</tr></thead><tbody>';
+  rows.forEach(o=>{h+=`<tr><td><b>${esc(rotCiclo(o.ciclo))}</b></td>`+COMPROMISSOS.map(([k])=>`<td>${chip(o[k])}</td>`).join('')+'</tr>';});
+  $('#tEstComp').innerHTML=h+'</tbody></table>';
+}
+
+const CAMPOS_HIST=[
+  ['Data de referência',o=>o.data_referencia?new Date(o.data_referencia).toLocaleDateString('pt-BR',{timeZone:'UTC'}):''],
+  ['Instituição do ponto focal',o=>o.q03_instituicao],
+  ['Territórios (PAS Nordeste)',o=>o.q04_territorios_total],['Homologados (Territórios da Cidadania)',o=>o.q05_territorios_homologados],
+  ['Redes constituídas',o=>o.q06_redes_constituidas],['Territórios sem rede',o=>o.q07_territorios_sem_rede],['Justificativa (soma ≠ total)',o=>o.q07_justificativa],
+  ['Situação dos territórios sem rede',o=>o.q08_situacao_sem_rede],['Previsão de constituição',o=>o.q09_previsao_constituicao],
+  ['Desafios para as redes',o=>[o.q10_desafios_redes,o.q10_desafios_redes_outro].filter(Boolean).join(' — ')],
+  ['Planos Safras previstos',o=>o.q11_pst_previstos],
+  ['Planos Safras por situação',o=>PST.map(([k,l])=>num(o['q12_pst_'+k])?`${l}: ${o['q12_pst_'+k]}`:'').filter(Boolean).join('; ')],
+  ['Integração ao Plano Safra',o=>o.q13_integracao_plano_safra],
+  ['Projetos Indutores',o=>[o.q14_projetos,o.q14_projetos_outro].filter(Boolean).join(' — ')],
+  ['Entraves dos projetos',o=>[o.q17_entraves,o.q17_entraves_outro].filter(Boolean).join(' — ')],
+  ['Temas de formação prioritários',o=>[o.q19_temas_formacao,o.q19_temas_formacao_outro].filter(Boolean).join(' — ')],
+  ['Apoios solicitados ao GT/DATER',o=>[o.q25_apoios,o.q25_apoios_outro].filter(Boolean).join(' — ')],
+  ['Prioridades',o=>[o.q26_prioridade_1,o.q26_prioridade_2,o.q26_prioridade_3].filter(Boolean).map((p,i)=>`${i+1}. ${p}`).join(' ')],
+  ['Observações',o=>o.q27_observacoes]
+];
+function tabEstHist(rows){
+  let h='<table class="hist"><thead><tr><th>Informação</th>'+rows.map(o=>`<th>${esc(rotCiclo(o.ciclo))}</th>`).join('')+'</tr></thead><tbody>';
+  CAMPOS_HIST.forEach(([l,f])=>{
+    const vals=rows.map(o=>f(o)); if(vals.every(v=>v===''||v==null)) return;
+    h+=`<tr><td>${l}</td>`+vals.map((v,i)=>{const mud=i>0&&String(v??'')!==String(vals[i-1]??'');return `<td${mud?' style="background:#eef2ff"':''}>${v===''||v==null?'<span class="semresp">—</span>':esc(v)}</td>`;}).join('')+'</tr>';
+  });
+  $('#tEstHist').innerHTML=h+'</tbody></table><p class="nota" style="margin-top:8px">Células destacadas: valor diferente do ciclo anterior.</p>';
+}
+
 /* ============ DADOS DE EXEMPLO (apenas sem ENDPOINT) ============ */
 function dadosExemplo(){
   const base={Alagoas:[6,4],Bahia:[27,9],Ceará:[13,7],Maranhão:[18,5],Paraíba:[15,8],Pernambuco:[12,6],Piauí:[11,3],'Rio Grande do Norte':[10,6],Sergipe:[8,5]};
   const st=['Realizadas','Em planejamento','Não realizadas nem planejadas'], sit=[];
   const projetos=[]; let h=7;
   const rnd=()=>{h=(h*9301+49297)%233280;return h/233280;};
-  ['2026-S1','2026-S2'].forEach((c,ci)=>{
+  ['2026-Q1','2026-Q2','2026-Q3'].forEach((c,ci)=>{
     ESTADOS.forEach((e,i)=>{
-      if(ci===1&&(e==='Maranhão'||e==='Piauí'))return;
-      const [t,r0]=base[e], r=Math.min(t,r0-(ci===0?Math.ceil(r0/3):0));
+      if(ci===2&&(e==='Maranhão'||e==='Piauí'))return;
+      const [t,r0]=base[e], r=Math.max(0,Math.min(t,r0-(2-ci)*Math.ceil(r0/4)));
       const prot=UF[e]+'-'+c;
-      sit.push({protocolo:prot,ciclo:c,q01_estado:e,data_referencia:ci?'2026-10-15':'2026-05-30',q04_territorios_total:t,q05_territorios_homologados:Math.round(t*.7),q06_redes_constituidas:r,q07_territorios_sem_rede:t-r,
-        q11_pst_previstos:Math.round(t/3),q12_pst_nao_iniciados:1,q12_pst_em_elaboracao:Math.max(0,Math.round(t/3)-2),q12_pst_concluidos:ci,q12_pst_em_implementacao:ci?0:0,q12_pst_sem_previsao:0,q12_pst_nao_sei:0,
+      sit.push({protocolo:prot,ciclo:c,q01_estado:e,data_referencia:['2026-04-20','2026-08-20','2026-10-15'][ci],q04_territorios_total:t,q05_territorios_homologados:Math.round(t*.7),q06_redes_constituidas:r,q07_territorios_sem_rede:t-r,
+        q11_pst_previstos:Math.round(t/3),q12_pst_nao_iniciados:1,q12_pst_em_elaboracao:Math.max(0,Math.round(t/3)-2),q12_pst_concluidos:Math.min(ci,Math.round(t/3)-1),q12_pst_em_implementacao:ci?0:0,q12_pst_sem_previsao:0,q12_pst_nao_sei:0,
         q18_formacao:st[(i+ci)%3],q20_sistema_estadual:['Em implantação','Ainda não iniciado','Implantado e em uso',"Não sei/preciso confirmar"][(i+ci)%4],q21_dados_sit:['Dados em levantamento/organização','Ainda não iniciado','Dados inseridos/enviados'][(i+2*ci)%3],
         q22_ater_digital:['Em planejamento','Não existem','Em funcionamento','Em implantação'][(i+ci)%4],q23_mutirao_caf:['Realizadas','Planejadas/em articulação','Não'][i%3],q24_apoio_car:['Planejadas/em articulação','Não se aplica','Realizadas','Não'][(i+ci)%4],
         ind_cobertura_redes_pct:pct(r,t),ind_projetos_contratados:0});
@@ -333,6 +499,8 @@ function dadosExemplo(){
 /* ============ INÍCIO ============ */
 $('#selCiclo').addEventListener('change',e=>{cicloSel=e.target.value;desenhar();});
 $('#btnAt').addEventListener('click',()=>carregar(true));
+$('#selEstado').addEventListener('change',e=>{estadoSel=e.target.value;desenhar();});
+document.querySelectorAll('.abas button').forEach(b=>b.addEventListener('click',()=>{modo=b.dataset.modo;desenhar();}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)carregar();});
 carregar(true);
 setInterval(()=>{if(!document.hidden)carregar();},CONFIG.INTERVALO_MIN*60000);

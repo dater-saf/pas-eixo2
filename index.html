@@ -111,8 +111,8 @@ footer{color:var(--suave);font-size:.8rem;text-align:center;padding:10px 0 30px}
 /* ============ CONFIGURAÇÃO ============ */
 const CONFIG = {
   ENDPOINT: 'https://script.google.com/macros/s/AKfycbxIF40dP9clAMVU2AZ1t4n3Stt7Qrj5RvVW0sKLg9fyiiN3ag03iPEtkLM3AhNfknfmkg/exec',                 // URL do App da Web do Google Apps Script (termina em /exec). Vazio = modo de teste.
-  PERIODICIDADE: 'semestral',   // 'semestral' ou 'trimestral'
-  VERSAO: 'v1.0 – out/2026'
+  PERIODICIDADE: 'quadrimestral', // 'quadrimestral', 'semestral' ou 'trimestral'
+  VERSAO: 'v1.1 – out/2026'
 };
 const CHAVE_RASCUNHO = 'pas_ne_eixo2_rascunho';
 
@@ -135,7 +135,11 @@ const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(
 
 function gerarCiclos(){
   const d=new Date(), y=d.getFullYear(), m=d.getMonth(), out=[];
-  if(CONFIG.PERIODICIDADE==='trimestral'){
+  if(CONFIG.PERIODICIDADE==='quadrimestral'){
+    const nomes=['1º quadrimestre (jan–abr)','2º quadrimestre (mai–ago)','3º quadrimestre (set–dez)'];
+    const q=Math.floor(m/4);
+    for(let i=-1;i<=0;i++){let qq=q+i,yy=y;if(qq<0){qq+=3;yy--;}out.push({v:`${yy}-Q${qq+1}`,l:`${yy} – ${nomes[qq]}`});}
+  }else if(CONFIG.PERIODICIDADE==='trimestral'){
     const nomes=['1º trimestre (jan–mar)','2º trimestre (abr–jun)','3º trimestre (jul–set)','4º trimestre (out–dez)'];
     const t=Math.floor(m/3);
     for(let i=-1;i<=0;i++){let tt=t+i,yy=y;if(tt<0){tt+=4;yy--;}out.push({v:`${yy}-T${tt+1}`,l:`${yy} – ${nomes[tt]}`});}
