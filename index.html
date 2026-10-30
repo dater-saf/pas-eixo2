@@ -112,6 +112,31 @@ header.topo .faixa-cores{height:5px;background:linear-gradient(90deg,#f6a523 0 2
   .comp-bloco{break-inside:auto} .comp-bloco h3{break-after:avoid} .comp-bloco tr{break-inside:avoid}
   footer{display:none}
 }
+
+.carregando{text-align:center;color:var(--suave);padding:60px 0}
+.login-card{max-width:440px;margin:30px auto;background:var(--card);border:1px solid var(--borda);border-top:5px solid var(--azul);border-radius:12px;padding:24px 22px}
+.login-card h2{font-family:Lexend,sans-serif;color:var(--azul);margin:0 0 6px;font-size:1.3rem}
+.login-card p{margin:0 0 14px;color:var(--suave);font-size:.92rem}
+.login-card .campo{display:block;font-weight:600;font-size:.9rem;margin-bottom:12px}
+.login-card .campo select,.login-card .campo input{margin-top:4px;display:block;width:100%;font:inherit;padding:9px 11px;border:1px solid var(--borda);border-radius:8px;background:#fff;color:var(--texto)}
+.login-card #lgCodigo{letter-spacing:.12em;text-transform:uppercase}
+.login-card .btn-pri{width:100%;margin-top:10px}
+.erro-login{color:var(--erro);font-size:.88rem;min-height:1.2em;margin-top:8px}
+.sessao{display:flex;justify-content:space-between;align-items:center;background:#eef2ff;border:1px solid #c9d4ff;border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:.92rem}
+.carga{background:#eef8f1;border:1px solid #bfe3c9;color:#1d4d2b;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.9rem}
+.carga button{margin-left:6px}
+.aviso-reenvio{margin-top:10px}
+select:disabled{background:#f0f2f6;color:var(--texto);opacity:1}
+
+.ou{display:flex;align-items:center;gap:10px;color:var(--suave);font-size:.85rem;margin:16px 0 12px}
+.ou::before,.ou::after{content:"";flex:1;height:1px;background:var(--borda)}
+.btn-painel{display:block;border:1px solid var(--azul);text-align:center;text-decoration:none;font-weight:600;border-radius:8px;padding:10px 16px}
+.btn-painel:hover{background:#eef2ff}
+.esc-botoes{display:grid;gap:10px;margin-top:6px}
+.opc-esc{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--borda);border-radius:10px;padding:14px 16px;cursor:pointer;font:inherit;color:var(--texto)}
+.opc-esc:hover,.opc-esc:focus{border-color:var(--azul);background:#f5f7ff;outline:none}
+.opc-esc b{display:block;color:var(--azul);font-size:1rem;margin-bottom:3px}
+.opc-esc span{display:block;font-size:.87rem;color:var(--suave);font-weight:400}
 </style>
 </head>
 <body>
@@ -124,14 +149,42 @@ header.topo .faixa-cores{height:5px;background:linear-gradient(90deg,#f6a523 0 2
   <div class="faixa-cores"></div>
 </header>
 
-<nav class="blocos no-print"><div class="wrap" id="nav"></div><div class="progresso"><div id="prog"></div></div></nav>
+<nav class="blocos no-print hidden" id="navBlocos"><div class="wrap" id="nav"></div><div class="progresso"><div id="prog"></div></div></nav>
 
 <main><div class="wrap">
-  <div id="telaForm">
+  <div id="telaCarregando" class="carregando">Verificando acesso…</div>
+  <div id="telaLogin" class="hidden">
+    <div class="login-card">
+      <h2>Acesso dos estados</h2>
+      <p>Selecione o estado e digite o código de acesso enviado pelo DATER/GT Eixo 2.</p>
+      <form id="formLogin" novalidate>
+        <label class="campo">Estado
+          <select id="lgEstado"><option value="">Selecione…</option></select></label>
+        <label class="campo">Código de acesso
+          <input id="lgCodigo" type="password" autocomplete="current-password" placeholder="XXXX-XXXX" spellcheck="false"></label>
+        <label class="ns"><input type="checkbox" id="lgMostrar"> Mostrar código</label>
+        <div class="erro-login" id="lgErro" role="alert"></div>
+        <button type="submit" class="btn-pri" id="btnEntrar">Entrar</button>
+      </form>
+      <div class="ou"><span>ou</span></div>
+      <a class="btn-sec btn-painel" id="lnkPainel" href="painel.html">Ver o painel de monitoramento</a>
+      <p class="help" style="margin-top:14px">Não recebeu o código ou ele não funciona? Entre em contato com o DATER por meio do e-mail <a href="mailto:dater@mda.gov.br">dater@mda.gov.br</a>.</p>
+    </div>
+  </div>
+  <div id="telaEscolha" class="hidden">
+    <div class="login-card escolha">
+      <h2>Como deseja começar?</h2>
+      <p id="escTexto"></p>
+      <div id="escBotoes" class="esc-botoes"></div>
+    </div>
+  </div>
+  <div id="telaForm" class="hidden">
+    <div class="sessao no-print"><span>Respondendo por <b id="sesEstado"></b></span><button type="button" class="btn-link" id="btnSair">Sair</button></div>
+    <div id="avisoCarga"></div>
     <div class="intro">
       <p>Este formulário busca atualizar as informações sobre a implementação do Eixo 2 – ATER e Crédito do PAS Nordeste em cada estado. As respostas subsidiarão o monitoramento dos compromissos, a identificação de avanços e desafios e a definição dos próximos encaminhamentos.</p>
       <p><strong>Solicitamos uma resposta consolidada por estado a cada ciclo de monitoramento.</strong> O preenchimento prioriza informações objetivas; utilize “Não sei/preciso confirmar” quando não houver dado validado. Se for necessário corrigir um envio, basta enviar novamente para o mesmo ciclo: vale o envio mais recente.</p>
-      <p class="rascunho">Suas respostas ficam guardadas neste navegador enquanto você preenche e servem de ponto de partida no próximo ciclo.</p>
+      <p class="rascunho">Enquanto você preenche, as respostas ficam guardadas neste navegador; se precisar sair, é possível continuar depois.</p>
     </div>
     <form id="form" novalidate></form>
     <div class="acoes no-print">
@@ -147,8 +200,9 @@ header.topo .faixa-cores{height:5px;background:linear-gradient(90deg,#f6a523 0 2
 /* ============ CONFIGURAÇÃO ============ */
 const CONFIG = {
   ENDPOINT: 'https://script.google.com/macros/s/AKfycbxIF40dP9clAMVU2AZ1t4n3Stt7Qrj5RvVW0sKLg9fyiiN3ag03iPEtkLM3AhNfknfmkg/exec',                 // URL do App da Web do Google Apps Script (termina em /exec). Vazio = modo de teste.
+  PAINEL_URL: 'painel.html',   // endereço do painel (mesmo repositório)
   PERIODICIDADE: 'quadrimestral', // 'quadrimestral', 'semestral' ou 'trimestral'
-  VERSAO: 'v1.1 – out/2026'
+  VERSAO: 'v1.2 – out/2026'
 };
 const CHAVE_RASCUNHO = 'pas_ne_eixo2_rascunho';
 
@@ -470,13 +524,16 @@ async function enviar(ev){
   TODAS.forEach(q=>{const m=validar(q); marcar(q,m); if(m&&!primeiro) primeiro=q;});
   if(primeiro){$('#q_'+primeiro.id).scrollIntoView({behavior:'smooth',block:'center'}); return;}
   const payload=coletar(), r=payload.respostas;
-  if(!confirm(`Confirmar o envio das informações de ${r.q01_estado} para o ciclo ${rotuloCiclo(r.ciclo)}?`)) return;
+  const ja=enviosDoCiclo(r.ciclo);
+  if(!confirm(`Confirmar o envio das informações de ${r.q01_estado} para o ciclo ${rotuloCiclo(r.ciclo)}?`+(ja.length?`\n\nAtenção: já existe envio deste estado para este ciclo. O novo envio substituirá o anterior no painel.`:''))) return;
   const btn=$('#btnEnviar'); btn.disabled=true; btn.textContent='Enviando…';
   try{
     if(!CONFIG.ENDPOINT){ mostrarSucesso(payload,'TESTE',true); return; }
-    const resp=await fetch(CONFIG.ENDPOINT,{method:'POST',body:JSON.stringify(payload)});
-    const j=await resp.json();
+    const j=await api(Object.assign({acao:'enviar',token:SESSAO&&SESSAO.token},payload));
+    if(!j.ok&&j.erro==='sessao_expirada'){ mostrarLogin('Sua sessão expirou. Entre novamente e clique em "Enviar respostas": tudo o que você preencheu foi mantido.'); return; }
     if(!j.ok) throw new Error(j.erro||'falha no registro');
+    ENVIOS.push({ciclo:r.ciclo,protocolo:j.protocolo,recebido_em:j.recebido_em});
+    avisoReenvio();
     mostrarSucesso(payload,j.protocolo,false);
   }catch(err){
     alert('Não foi possível enviar ('+err.message+').\nSuas respostas continuam salvas neste navegador. Tente novamente em instantes ou entre em contato com o DATER.');
@@ -538,6 +595,128 @@ function mostrarSucesso(payload,protocolo,teste){
   $('#btnImprimir').onclick=()=>{const t=document.title; document.title=`Comprovante ${protocolo}`; window.print(); document.title=t;};
 }
 
+/* ============ ACESSO POR ESTADO ============ */
+const CHAVE_SESSAO='pas_ne_eixo2_sessao';
+let SESSAO=null, ENVIOS=[];
+async function api(body){
+  const r=await fetch(CONFIG.ENDPOINT,{method:'POST',body:JSON.stringify(body)});
+  return r.json();
+}
+const fmtDataHora=d=>{const x=new Date(d);return isNaN(x)?'':x.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});};
+function telas(qual){
+  $('#telaCarregando').classList.toggle('hidden',qual!=='carregando');
+  $('#telaLogin').classList.toggle('hidden',qual!=='login');
+  $('#telaForm').classList.toggle('hidden',qual!=='form');
+  $('#telaEscolha').classList.toggle('hidden',qual!=='escolha');
+  $('#sucesso').classList.add('hidden');
+  $('#navBlocos').classList.toggle('hidden',qual!=='form');
+}
+function mostrarLogin(msg){
+  telas('login');
+  $('#lgErro').textContent=msg||'';
+  if(SESSAO&&SESSAO.estado) $('#lgEstado').value=SESSAO.estado;
+  $('#lgCodigo').value=''; $('#lgCodigo').focus();
+}
+async function entrarComCodigo(ev){
+  ev.preventDefault();
+  const estado=$('#lgEstado').value, codigo=$('#lgCodigo').value.trim();
+  if(!estado||!codigo){$('#lgErro').textContent='Selecione o estado e digite o código.';return;}
+  const btn=$('#btnEntrar'); btn.disabled=true; btn.textContent='Verificando…'; $('#lgErro').textContent='';
+  try{
+    let j;
+    if(!CONFIG.ENDPOINT) j={ok:true,token:'teste',estado,envios:[],ultimo:null,ultimo_projetos:[]};
+    else j=await api({acao:'login',estado,codigo});
+    if(!j.ok){$('#lgErro').textContent=j.erro||'Não foi possível entrar.';return;}
+    iniciarSessao(j,true);
+  }catch(err){ $('#lgErro').textContent='Sem conexão com o servidor. Verifique a internet e tente novamente.'; }
+  finally{btn.disabled=false;btn.textContent='Entrar';}
+}
+function iniciarSessao(ctx,perguntar){
+  const trocouEstado=SESSAO&&SESSAO.estado&&SESSAO.estado!==ctx.estado;
+  SESSAO={token:ctx.token||(SESSAO&&SESSAO.token),estado:ctx.estado};
+  try{sessionStorage.setItem(CHAVE_SESSAO,JSON.stringify(SESSAO));}catch(_){}
+  ENVIOS=ctx.envios||[];
+  $('#sesEstado').textContent=ctx.estado;
+  $('#avisoCarga').innerHTML='';
+  const sel=$('[name="q01_estado"]');
+  const temRascunho=sel.value===ctx.estado && !trocouEstado && temConteudo();
+  const ult=ctx.ultimo, projs=ctx.ultimo_projetos||[];
+  const abrir=modo=>{
+    if(modo==='ultimo'){ limparCampos(); preencher(ult,projs);
+      $('#avisoCarga').innerHTML=`<div class="carga">Formulário preenchido com o último envio de ${esc(ctx.estado)} (${esc(rotuloCiclo(ult.ciclo))}, recebido em ${esc(fmtDataHora(ult.recebido_em))}). Revise e atualize o que mudou antes de enviar.</div>`; }
+    else if(modo==='branco'){ limparCampos(); }
+    sel.value=ctx.estado; sel.disabled=true;
+    atualizar(); avisoReenvio(); salvarRascunho();
+    telas('form'); window.scrollTo(0,0);
+  };
+  // Sessão retomada (página recarregada): segue com o que está no navegador, sem perguntar
+  if(!perguntar){ abrir(temRascunho?'manter':'branco'); return; }
+  // Estado sem envios anteriores: abre em branco (ou continua o rascunho deste navegador)
+  if(!ult){ abrir(temRascunho?'manter':'branco'); return; }
+  // Estado com envios anteriores: pergunta como começar
+  const total=new Set(ENVIOS.map(e=>e.ciclo)).size;
+  $('#escTexto').innerHTML=`${esc(ctx.estado)} já enviou respostas para ${total} ciclo${total>1?'s':''}. O último envio se refere ao ciclo <b>${esc(rotuloCiclo(ult.ciclo))}</b> e foi recebido em ${esc(fmtDataHora(ult.recebido_em))}.`;
+  const box=$('#escBotoes'); box.innerHTML='';
+  const opc=(titulo,desc,modo)=>{const b=el('button',{type:'button',class:'opc-esc'},el('b',{},titulo),el('span',{},desc));b.onclick=()=>abrir(modo);box.append(b);};
+  opc('Usar os dados do último envio','O formulário abre preenchido com as respostas do ciclo '+rotuloCiclo(ult.ciclo)+'. Você revisa e atualiza só o que mudou.','ultimo');
+  opc('Começar em branco','O formulário abre vazio para um preenchimento completo.','branco');
+  if(temRascunho) opc('Continuar o preenchimento salvo neste navegador','Retoma o que foi preenchido aqui e ainda não foi enviado.','manter');
+  telas('escolha');
+  $('.opc-esc').focus();
+}
+function temConteudo(){
+  return $$('#form [name]').some(e=>!['ciclo','q01_estado'].includes(e.name)&&((e.type==='checkbox'||e.type==='radio')?e.checked:String(e.value).trim()!==''));
+}
+function limparCampos(){
+  $('#form').reset();
+  $('[name="ciclo"]').value=CICLOS[CICLOS.length-1].v;
+  TODAS.forEach(q=>marcar(q,''));
+}
+async function sair(){
+  if(!confirm('Sair do formulário? O que estiver preenchido continua guardado neste navegador.')) return;
+  const t=SESSAO&&SESSAO.token;
+  try{sessionStorage.removeItem(CHAVE_SESSAO);}catch(_){}
+  if(CONFIG.ENDPOINT&&t) api({acao:'sair',token:t}).catch(()=>{});
+  SESSAO=Object.assign({},SESSAO,{token:null});
+  mostrarLogin('');
+}
+function enviosDoCiclo(c){return ENVIOS.filter(x=>x.ciclo===c).sort((a,b)=>new Date(b.recebido_em)-new Date(a.recebido_em));}
+function avisoReenvio(){
+  const w=$('#q_ciclo'); let d=$('#avisoReenvio');
+  if(!d){d=el('div',{id:'avisoReenvio',class:'aviso aviso-reenvio'});w.insertBefore(d,$('.erro',w));}
+  const e=enviosDoCiclo(v('ciclo'));
+  d.classList.toggle('hidden',!e.length);
+  if(e.length) d.innerHTML=`<b>${esc(SESSAO&&SESSAO.estado)} já enviou respostas para este ciclo</b> (${e.length>1?e.length+' envios; o último ':''}em ${fmtDataHora(e[0].recebido_em)}, protocolo ${esc(e[0].protocolo)}). Um novo envio substituirá o anterior no painel; o anterior continua guardado na planilha.`;
+}
+/* Preenche o formulário a partir de uma resposta gravada na planilha */
+function setCampo(name,val){
+  if(val===''||val==null) return;
+  const els=ins(name); if(!els.length) return;
+  const e=els[0];
+  if(e.type==='radio'){ els.forEach(x=>x.checked=x.value===String(val)); return; }
+  if(e.type==='checkbox'&&e.dataset.multi){ const l=String(val).split('; '); els.forEach(x=>x.checked=l.includes(x.value)); return; }
+  e.value=String(val);
+}
+function preencher(r,projs){
+  TODAS.forEach(q=>{
+    if(['ciclo','data_referencia','q01_estado'].includes(q.id)) return;
+    switch(q.tipo){
+      case 'number': if(r[q.id]===NS){const c=$(`[name="${q.id}_ns"]`); if(c) c.checked=true;} else setCampo(q.id,r[q.id]); break;
+      case 'checkbox': setCampo(q.id,r[q.id]); if(q.outro) setCampo(q.id+'_outro',r[q.id+'_outro']); break;
+      case 'numgrid': q.campos.forEach(([k])=>setCampo(q.id+'__'+k,r[q.id+'_'+k])); break;
+      case 'prioridades': [1,2,3].forEach(i=>setCampo(q.id+'_'+i,r[q.id+'_'+i])); break;
+      case 'projetos': break;
+      default: setCampo(q.id,r[q.id]);
+    }
+  });
+  projs.forEach(p=>{
+    const P=PROJETOS.find(x=>x.curto===p.projeto); if(!P) return;
+    ETAPAS.forEach(([k])=>setCampo(`p_${P.id}__${k}`,p['etapa_'+k]));
+    setCampo(`p_${P.id}__fontes`,p.fontes); setCampo(`p_${P.id}__fontes_outro`,p.fontes_outro);
+    INTERNACIONAIS.forEach(org=>setCampo(`p_${P.id}__papel_${slug(org)}`,p['papel_'+slug(org)]));
+  });
+}
+
 /* ============ INÍCIO ============ */
 render();
 carregarRascunho();
@@ -549,12 +728,27 @@ function revalidar(e){ // reavalia o campo editado enquanto se digita (evita sal
   if(q&&$('#q_'+q.id).classList.contains('invalido')) marcar(q,validar(q));
 }
 $('#form').addEventListener('input',e=>{exclusividade(e);atualizar();revalidar(e);salvarRascunho();});
-$('#form').addEventListener('change',e=>{atualizar();salvarRascunho();});
+$('#form').addEventListener('change',e=>{atualizar();salvarRascunho();if(e.target.name==='ciclo')avisoReenvio();});
 $('#form').addEventListener('submit',enviar);
 $('#btnLimpar').onclick=()=>{ if(!confirm('Apagar todas as respostas deste formulário neste navegador?')) return;
-  try{localStorage.removeItem(CHAVE_RASCUNHO);}catch(_){} $('#form').reset(); selCiclo.value=CICLOS[CICLOS.length-1].v;
-  TODAS.forEach(q=>marcar(q,'')); atualizar(); $('#rasc').textContent=''; };
+  try{localStorage.removeItem(CHAVE_RASCUNHO);}catch(_){} limparCampos();
+  if(SESSAO) $('[name="q01_estado"]').value=SESSAO.estado;
+  atualizar(); avisoReenvio(); $('#rasc').textContent=''; };
 atualizar();
+$('#lgEstado').innerHTML+=ESTADOS.map(e=>`<option value="${e}">${e}</option>`).join('');
+$('#formLogin').addEventListener('submit',entrarComCodigo);
+$('#lgMostrar').addEventListener('change',e=>$('#lgCodigo').type=e.target.checked?'text':'password');
+$('#btnSair').onclick=sair;
+$('#lnkPainel').href=CONFIG.PAINEL_URL;
+(async()=>{
+  let s=null; try{s=JSON.parse(sessionStorage.getItem(CHAVE_SESSAO)||'null');}catch(_){}
+  if(!s||!s.token){ mostrarLogin(''); return; }
+  if(!CONFIG.ENDPOINT){ iniciarSessao({token:s.token,estado:s.estado,envios:[]}); return; }
+  try{
+    const j=await api({acao:'verificar',token:s.token});
+    if(j.ok){ SESSAO=s; iniciarSessao(Object.assign({token:s.token},j)); } else { SESSAO={estado:s.estado}; mostrarLogin('Sua sessão expirou. Entre novamente.'); }
+  }catch(_){ SESSAO={estado:s.estado}; mostrarLogin('Sem conexão com o servidor. Tente novamente.'); }
+})();
 </script>
 </body>
 </html>
