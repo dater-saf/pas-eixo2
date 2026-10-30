@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monitoramento Eixo 2 – PAS Nordeste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--azul:#1c3ff2;--azul-esc:#132c9e;--amarelo:#ffcc00;--faixa:#a7bfec;--fundo:#f4f6fb;--card:#fff;--texto:#1d2333;--suave:#5b6478;--borda:#d8deeb;--erro:#c62828;--aviso:#7a4f00;--aviso-bg:#fff4cc;--ok:#1b7f3b}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--fundo);color:var(--texto);line-height:1.5}
+.wrap{max-width:840px;margin:0 auto;padding:0 16px}
+header.topo{background:var(--faixa);padding:28px 0 22px}
+header h1{font-family:Lexend,sans-serif;color:var(--azul);margin:0;font-size:clamp(1.35rem,3.6vw,2rem);line-height:1.2}
+header .sub{margin:.45rem 0 0;color:var(--azul-esc);font-weight:500}
+header .barra{width:110px;height:4px;background:var(--amarelo);border-radius:2px;margin-top:14px}
+nav.blocos{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--borda)}
+nav.blocos .wrap{display:flex;gap:6px;overflow-x:auto;padding:8px 16px}
+nav.blocos a{flex:0 0 auto;text-decoration:none;font-size:.8rem;font-weight:600;color:var(--suave);padding:5px 11px;border-radius:999px;border:1px solid var(--borda);white-space:nowrap}
+nav.blocos a.ok{border-color:var(--ok);color:var(--ok);background:#eef8f1}
+.progresso{height:3px;background:var(--borda)}
+.progresso div{height:100%;width:0;background:var(--azul);transition:width .3s}
+main{padding:20px 0 70px}
+.intro{background:var(--card);border-left:4px solid var(--amarelo);padding:16px 18px;border-radius:8px;margin-bottom:20px;font-size:.95rem}
+.intro p{margin:.3rem 0}
+section.bloco{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:20px 18px 8px;margin-bottom:20px;scroll-margin-top:56px}
+section.bloco h2{font-family:Lexend,sans-serif;color:var(--azul);font-size:1.15rem;margin:0 0 4px}
+.bloco-desc{color:var(--suave);font-size:.9rem;margin:0 0 6px}
+.q{padding:16px 0;border-top:1px solid #eef1f7}
+.q.primeira{border-top:0}
+.lbl{font-weight:600;display:block;margin-bottom:4px}
+.num{color:var(--azul);margin-right:3px}
+.req{color:var(--erro);margin-left:2px}
+.help{font-size:.85rem;color:var(--suave);margin:0 0 8px}
+input[type=text],input[type=email],input[type=number],input[type=date],select,textarea{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--borda);border-radius:8px;background:#fff;color:var(--texto)}
+input[type=number]{max-width:170px}
+input:disabled{background:#f0f2f6;color:#999}
+textarea{min-height:90px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--azul);outline-offset:1px}
+.linha-num{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.opcoes{display:grid;gap:6px}
+.opcoes.col{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.opt{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border:1px solid var(--borda);border-radius:8px;cursor:pointer;font-size:.93rem;background:#fff}
+.opt:hover{border-color:var(--azul)}
+.opt input{margin-top:4px;accent-color:var(--azul)}
+.opt:has(input:checked){background:#eef2ff;border-color:var(--azul)}
+.ns{display:inline-flex;align-items:center;gap:6px;font-size:.88rem;color:var(--suave);cursor:pointer}
+.ns input{accent-color:var(--azul)}
+.numgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.numgrid label{font-size:.87rem;display:flex;flex-direction:column;gap:4px}
+.numgrid input{max-width:none}
+.outro-txt{margin-top:6px}
+.erro{color:var(--erro);font-size:.85rem;margin-top:6px;display:none}
+.q.invalido .erro{display:block}
+.q.invalido > input,.q.invalido > select,.q.invalido textarea{border-color:var(--erro)}
+.aviso{background:var(--aviso-bg);color:var(--aviso);border-radius:8px;padding:9px 12px;font-size:.87rem;margin:0 0 12px}
+.projeto{border:1px solid var(--borda);border-left:4px solid var(--azul);border-radius:10px;padding:14px;margin-top:12px;background:#fafbff}
+.projeto h3{margin:0 0 10px;font-size:1rem;font-family:Lexend,sans-serif;color:var(--azul-esc)}
+.projeto h4{font-size:.9rem;margin:16px 0 6px}
+.papel{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 4px 30px;font-size:.84rem;color:var(--suave)}
+.papel select{width:auto;padding:4px 8px;font-size:.84rem}
+.hidden{display:none!important}
+.acoes{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:6px}
+.acoes .dir{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;border-radius:8px;padding:11px 20px;cursor:pointer;border:1px solid transparent}
+.btn-pri{background:var(--azul);color:#fff}
+.btn-pri:hover{background:var(--azul-esc)}
+.btn-pri:disabled{opacity:.6;cursor:wait}
+.btn-sec{background:#fff;color:var(--azul);border-color:var(--azul)}
+.btn-link{background:none;color:var(--suave);text-decoration:underline;padding:6px 4px;font-weight:500}
+.rascunho{font-size:.8rem;color:var(--suave)}
+#sucesso{background:var(--card);border:1px solid var(--borda);border-top:5px solid var(--ok);border-radius:12px;padding:24px 20px}
+#sucesso h2{font-family:Lexend,sans-serif;color:var(--ok);margin:0 0 8px}
+#sucesso table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92rem}
+#sucesso td{padding:7px 8px;border-bottom:1px solid #eef1f7;vertical-align:top}
+#sucesso td:first-child{color:var(--suave);width:55%}
+#sucesso pre{background:#f4f6fb;padding:12px;border-radius:8px;overflow:auto;font-size:.75rem;max-height:320px}
+.teste{background:var(--aviso-bg);color:var(--aviso);padding:8px 12px;border-radius:8px;font-size:.88rem}
+footer{color:var(--suave);font-size:.8rem;text-align:center;padding:10px 0 30px}
+@media print{nav,.acoes,.no-print,header .barra{display:none!important}body{background:#fff}#sucesso{border:0}}
+</style>
+</head>
+<body>
+<header class="topo"><div class="wrap">
+  <h1>Monitoramento do Eixo 2 — ATER e Crédito</h1>
+  <p class="sub">PAS Nordeste · Redes Territoriais de ATER e Crédito</p>
+  <div class="barra"></div>
+</div></header>
+
+<nav class="blocos no-print"><div class="wrap" id="nav"></div><div class="progresso"><div id="prog"></div></div></nav>
+
+<main><div class="wrap">
+  <div id="telaForm">
+    <div class="intro">
+      <p>Este formulário busca atualizar as informações sobre a implementação do Eixo 2 – ATER e Crédito do PAS Nordeste em cada estado. As respostas subsidiarão o monitoramento dos compromissos, a identificação de avanços e desafios e a definição dos próximos encaminhamentos.</p>
+      <p><strong>Solicitamos uma resposta consolidada por estado a cada ciclo de monitoramento.</strong> O preenchimento prioriza informações objetivas; utilize “Não sei/preciso confirmar” quando não houver dado validado. Se for necessário corrigir um envio, basta enviar novamente para o mesmo ciclo: vale o envio mais recente.</p>
+      <p class="rascunho">Suas respostas ficam guardadas neste navegador enquanto você preenche e servem de ponto de partida no próximo ciclo.</p>
+    </div>
+    <form id="form" novalidate></form>
+    <div class="acoes no-print">
+      <button type="button" class="btn-link" id="btnLimpar">Limpar formulário</button>
+      <div class="dir"><span class="rascunho" id="rasc"></span><button type="submit" form="form" class="btn-pri" id="btnEnviar">Enviar respostas</button></div>
+    </div>
+  </div>
+  <div id="sucesso" class="hidden"></div>
+</div></main>
+<footer>DATER/SAF/MDA · GT Eixo 2 – ATER e Crédito · <span id="versao"></span></footer>
+
+<script>
+/* ============ CONFIGURAÇÃO ============ */
+const CONFIG = {
+  ENDPOINT: 'https://script.google.com/macros/s/AKfycbxIF40dP9clAMVU2AZ1t4n3Stt7Qrj5RvVW0sKLg9fyiiN3ag03iPEtkLM3AhNfknfmkg/exec',                 // URL do App da Web do Google Apps Script (termina em /exec). Vazio = modo de teste.
+  PERIODICIDADE: 'semestral',   // 'semestral' ou 'trimestral'
+  VERSAO: 'v1.0 – out/2026'
+};
+const CHAVE_RASCUNHO = 'pas_ne_eixo2_rascunho';
+
+/* ============ LISTAS ============ */
+const NS = 'Não sei/preciso confirmar';
+const ESTADOS = ['Alagoas','Bahia','Ceará','Maranhão','Paraíba','Pernambuco','Piauí','Rio Grande do Norte','Sergipe'];
+const PROJETOS = [
+  {id:'quintais', curto:'Quintais Produtivos', longo:'Quintais Produtivos'},
+  {id:'cdpaf', curto:'CD-PAF Territorial', longo:'Central de Distribuição de Produtos da Agricultura Familiar do Território (CD-PAF Territorial)'},
+  {id:'avicultura', curto:'Avicultura Caipira Familiar de Postura', longo:'Avicultura Caipira Familiar de Postura (Projeto Ovo Limpo)'},
+  {id:'feiras', curto:'Circuito Nordestino de Feiras', longo:'Circuito Nordestino de Feiras da Agricultura Familiar e Economia Solidária'},
+  {id:'pronaf', curto:'Pronaf Mais Alimentos', longo:'Projetos de Mecanização da Agricultura Familiar – Pronaf Mais Alimentos'},
+  {id:'outro', curto:'Outro projeto indutor', longo:'Outro projeto indutor'}
+];
+const NENHUM_PROJ = 'Nenhum projeto indutor em desenvolvimento, priorizado ou previsto';
+const ETAPAS = [['nao_iniciado','Não iniciado'],['em_elaboracao','Em elaboração'],['concluido','Elaboração concluída'],['encaminhado','Encaminhado a agente financeiro'],['contratado','Contratado/financiado'],['nao_sei','Não sei/preciso confirmar']];
+const FONTES = ['Banco do Nordeste (BNB)','Banco do Brasil (BB)','Cooperativas de crédito','FIDA','GIZ','IICA','Banco Mundial','Recurso federal','Recurso estadual','Recurso municipal','Outra fonte','Ainda sem fonte definida',NS];
+const INTERNACIONAIS = ['FIDA','GIZ','IICA','Banco Mundial'];
+const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+
+function gerarCiclos(){
+  const d=new Date(), y=d.getFullYear(), m=d.getMonth(), out=[];
+  if(CONFIG.PERIODICIDADE==='trimestral'){
+    const nomes=['1º trimestre (jan–mar)','2º trimestre (abr–jun)','3º trimestre (jul–set)','4º trimestre (out–dez)'];
+    const t=Math.floor(m/3);
+    for(let i=-1;i<=0;i++){let tt=t+i,yy=y;if(tt<0){tt+=4;yy--;}out.push({v:`${yy}-T${tt+1}`,l:`${yy} – ${nomes[tt]}`});}
+  }else{
+    const nomes=['1º semestre (jan–jun)','2º semestre (jul–dez)'];
+    const s=m<6?0:1;
+    for(let i=-1;i<=0;i++){let ss=s+i,yy=y;if(ss<0){ss+=2;yy--;}out.push({v:`${yy}-S${ss+1}`,l:`${yy} – ${nomes[ss]}`});}
+  }
+  return out;
+}
+const CICLOS = gerarCiclos();
+
+/* ============ HELPERS ============ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const ins=name=>$$(`#form [name="${name}"]`);
+function v(name){
+  const els=ins(name); if(!els.length) return '';
+  const e=els[0];
+  if(e.type==='radio'){const c=els.find(x=>x.checked);return c?c.value:'';}
+  if(e.type==='checkbox'){ if(e.dataset.multi) return els.filter(x=>x.checked).map(x=>x.value); return e.checked; }
+  return e.value.trim();
+}
+function n(name){const x=v(name); if(x==='') return null; const k=Number(x); return isNaN(k)?null:k;}
+const isNS=name=>{const e=$(`#form [name="${name}_ns"]`);return !!(e&&e.checked);};
+const has=(name,val)=>{const a=v(name);return Array.isArray(a)&&a.includes(val);};
+function projSelecionados(){const a=v('q14_projetos');return Array.isArray(a)?PROJETOS.filter(p=>a.includes(p.curto)):[];}
+function el(tag,attrs={},...kids){
+  const e=document.createElement(tag);
+  for(const[k,val] of Object.entries(attrs)){
+    if(k==='class')e.className=val; else if(k==='html')e.innerHTML=val; else if(k.startsWith('data-')){if(val!=null)e.setAttribute(k,val);} else if(val!==undefined&&val!==null&&val!==false)e.setAttribute(k,val===true?'':val);
+  }
+  kids.flat().forEach(c=>{if(c==null)return;e.append(c.nodeType?c:document.createTextNode(c));});
+  return e;
+}
+
+/* ============ ESTRUTURA DO FORMULÁRIO ============ */
+const BLOCOS = [
+ {id:'C', nav:'Ciclo', titulo:'Ciclo de referência', desc:'Indique a qual período de monitoramento se referem as informações.', perguntas:[
+  {id:'ciclo', tipo:'select', req:true, label:'Ciclo de monitoramento', opcoes:CICLOS, help:'Envie uma resposta por estado a cada ciclo. Para corrigir, envie novamente para o mesmo ciclo.'},
+  {id:'data_referencia', tipo:'date', req:true, label:'Data de referência das informações', help:'Data em que as informações abaixo estavam válidas.'}
+ ]},
+ {id:'A', nav:'A · Identificação', titulo:'Bloco A — Identificação', perguntas:[
+  {id:'q01_estado', num:1, tipo:'select', req:true, label:'Estado', opcoes:ESTADOS},
+  {id:'q02_ponto_focal', num:2, tipo:'text', req:true, label:'Nome do ponto focal estadual para diálogo sobre as Redes Territoriais de ATER e Crédito'},
+  {id:'q03_instituicao', num:3, tipo:'text', req:true, label:'Instituição do ponto focal'},
+  {id:'q03_email', tipo:'email', req:true, label:'E-mail institucional do ponto focal'}
+ ]},
+ {id:'B', nav:'B · Territórios e redes', titulo:'Bloco B — Territórios e Redes de ATER e Crédito', perguntas:[
+  {id:'q04_territorios_total', num:4, tipo:'number', req:true, label:'Quantos territórios existem no estado, considerando o recorte territorial adotado pelo PAS Nordeste?', help:'Informe o total de territórios considerados no planejamento do PAS Nordeste. Este é o universo de referência das perguntas 6 e 7.'},
+  {id:'q05_territorios_homologados', num:5, tipo:'number', req:true, ns:true, label:'Desse total, quantos estão homologados/reconhecidos no âmbito da política dos Territórios da Cidadania?', help:'Refere-se ao reconhecimento/homologação nos Territórios da Cidadania, não à existência de territórios em geral.',
+    max:()=>n('q04_territorios_total'), maxMsg:'Não pode ser maior que o total de territórios (pergunta 4).'},
+  {id:'q06_redes_constituidas', num:6, tipo:'number', req:true, label:'Desses territórios, quantos possuem Rede Territorial de ATER e Crédito constituída?', help:'Considere o critério comum de rede constituída definido pelo GT Eixo 2.',
+    max:()=>n('q04_territorios_total'), maxMsg:'Não pode ser maior que o total de territórios (pergunta 4).'},
+  {id:'q07_territorios_sem_rede', num:7, tipo:'number', req:true, label:'Em quantos territórios ainda não há Rede Territorial de ATER e Crédito constituída?', help:'Use o mesmo universo da pergunta 4. A soma das perguntas 6 e 7 deve corresponder ao total de territórios.',
+    max:()=>n('q04_territorios_total'), maxMsg:'Não pode ser maior que o total de territórios (pergunta 4).'},
+  {id:'q07_justificativa', tipo:'textarea', req:true, curto:true, label:'A soma das perguntas 6 e 7 é diferente do total da pergunta 4. Explique brevemente a diferença.',
+    showIf:()=>{const t=n('q04_territorios_total'),a=n('q06_redes_constituidas'),b=n('q07_territorios_sem_rede');return t!=null&&a!=null&&b!=null&&a+b!==t;}},
+  {id:'q08_situacao_sem_rede', num:8, tipo:'checkbox', req:true, label:'Qual é a situação dos territórios que ainda não possuem rede?', help:'Pode marcar mais de uma opção se diferentes territórios estiverem em situações distintas.',
+    opcoes:['Articulação iniciada','Em definição das instituições participantes','Em processo de pactuação/formalização','Sem articulação iniciada','Sem previsão definida',NS], exclusivos:[NS],
+    showIf:()=>n('q07_territorios_sem_rede')>0},
+  {id:'q09_previsao_constituicao', num:9, tipo:'radio', req:true, label:'Para os territórios sem rede, existe previsão de constituição?',
+    opcoes:['Sim, para todos','Sim, para alguns','Não há previsão definida','A articulação ainda não foi iniciada',NS],
+    showIf:()=>n('q07_territorios_sem_rede')>0},
+  {id:'q10_desafios_redes', num:10, tipo:'checkbox', req:false, col:true, label:'Quais são os principais desafios ou apoios necessários para avançar na constituição/consolidação das redes?',
+    opcoes:['Articulação entre instituições','Definição de governança/coordenação','Formalização ou pactuação','Mobilização dos atores territoriais','Equipe técnica insuficiente','Recursos financeiros','Articulação com agentes financeiros','Apoio metodológico do DATER/GT Eixo 2','Outro','Não há dificuldades relevantes'],
+    exclusivos:['Não há dificuldades relevantes'], outro:'Outro'}
+ ]},
+ {id:'Cs', nav:'C · Planos Safras', titulo:'Bloco C — Planos Safras Territoriais', perguntas:[
+  {id:'q11_pst_previstos', num:11, tipo:'number', req:true, ns:true, label:'Quantos Planos Safras Territoriais estão previstos para o estado?'},
+  {id:'q12_pst', num:12, tipo:'numgrid', req:true, label:'Informe a quantidade de Planos Safras Territoriais em cada situação.', help:'Use 0 quando não houver planos na situação.',
+    campos:[['nao_iniciados','Não iniciados'],['em_elaboracao','Em elaboração'],['concluidos','Concluídos'],['em_implementacao','Em implementação/acompanhamento'],['sem_previsao','Sem previsão definida'],['nao_sei','Não sei/preciso confirmar']]},
+  {id:'q12_justificativa', tipo:'textarea', req:true, curto:true, label:'A soma das situações (pergunta 12) é diferente do total previsto (pergunta 11). Explique brevemente a diferença.',
+    showIf:()=>{const t=n('q11_pst_previstos'); if(t==null||isNS('q11_pst_previstos'))return false; const c=BLOCOS[3].perguntas[1].campos; const vals=c.map(([k])=>n('q12_pst__'+k)); if(vals.every(x=>x==null))return false; return vals.reduce((s,x)=>s+(x||0),0)!==t;}},
+  {id:'q13_integracao_plano_safra', num:13, tipo:'radio', req:true, label:'Há articulação para integrar a metodologia dos Planos Safras Territoriais ao planejamento de ATER/crédito e ao Plano Safra nacional?',
+    opcoes:['Sim, já ocorre','Em construção','Ainda não',NS]}
+ ]},
+ {id:'D', nav:'D · Projetos Indutores', titulo:'Bloco D — Projetos Indutores e acesso ao crédito', desc:'Relação inicial de Projetos Indutores do PAS Nordeste (Guia Metodológico do Eixo 2).', perguntas:[
+  {id:'q14_projetos', num:14, tipo:'checkbox', req:true, label:'Quais Projetos Indutores estão sendo desenvolvidos, priorizados ou previstos no estado?',
+    opcoes:[...PROJETOS.map(p=>p.curto), NENHUM_PROJ], exclusivos:[NENHUM_PROJ], outro:'Outro projeto indutor', outroLabel:'Nome do outro projeto indutor'},
+  {id:'q15_16_detalhe', num:'15–16', tipo:'projetos', req:true, label:'Para cada projeto selecionado, informe a quantidade de projetos/propostas em cada etapa e as fontes de recursos associadas.',
+    help:'Campos em branco serão considerados zero. Para FIDA, GIZ, IICA e Banco Mundial, indique o papel no projeto.',
+    showIf:()=>projSelecionados().length>0},
+  {id:'q17_entraves', num:17, tipo:'checkbox', req:false, col:true, label:'Quais são os principais entraves para elaboração, análise ou contratação dos projetos?',
+    opcoes:['Elaboração técnica','Documentação dos beneficiários','Garantias ou requisitos de crédito','Análise pelo agente financeiro','Ausência de fonte de recursos definida','Falta de equipe técnica','Formação','Outro',NS], exclusivos:[NS], outro:'Outro',
+    showIf:()=>projSelecionados().length>0}
+ ]},
+ {id:'E', nav:'E · Formação e sistemas', titulo:'Bloco E — Formação, sistemas e ATER Digital', perguntas:[
+  {id:'q18_formacao', num:18, tipo:'radio', req:true, label:'Foram realizadas ou estão previstas atividades de formação para integrantes das redes?',
+    opcoes:['Realizadas','Em planejamento','Não realizadas nem planejadas','Não se aplica — ainda não há redes constituídas']},
+  {id:'q19_temas_formacao', num:19, tipo:'checkbox', req:false, col:true, label:'Quais temas de formação são prioritários?',
+    opcoes:['Elaboração de projetos de crédito','Planos Safras Territoriais','Governança e funcionamento das redes','Territorialidade e planejamento','CAF','CAR/regularização ambiental','ATER Digital','Outros'], outro:'Outros'},
+  {id:'q20_sistema_estadual', num:20, tipo:'radio', req:true, label:'Qual é a situação da implantação do Sistema Estadual de Informações de ATER e Crédito do PAS Nordeste?',
+    opcoes:['Implantado e em uso','Em implantação','Em planejamento/articulação','Ainda não iniciado',NS]},
+  {id:'q21_dados_sit', num:21, tipo:'radio', req:true, label:'Qual é a situação da organização e alimentação dos dados do Eixo 2 para o Sistema de Informações Territoriais (SIT)?',
+    opcoes:['Dados inseridos/enviados','Dados em levantamento/organização','Ainda não iniciado',NS]},
+  {id:'q22_ater_digital', num:22, tipo:'radio', req:true, label:'Existem iniciativas de ATER Digital ou salas/espaços de atendimento digital nos territórios?',
+    opcoes:['Em funcionamento','Em implantação','Em planejamento','Não existem',NS]}
+ ]},
+ {id:'F', nav:'F · Ações complementares', titulo:'Bloco F — Ações complementares', perguntas:[
+  {id:'q23_mutirao_caf', num:23, tipo:'radio', req:true, label:'Existem ações de mutirão para emissão/atualização do CAF articuladas às redes?',
+    opcoes:['Realizadas','Planejadas/em articulação','Não',NS]},
+  {id:'q24_apoio_car', num:24, tipo:'radio', req:true, label:'Existem ações de apoio ao CAR/CEFIR ou instrumento estadual correspondente articuladas às redes?',
+    opcoes:['Realizadas','Planejadas/em articulação','Não','Não se aplica',NS]}
+ ]},
+ {id:'G', nav:'G · Prioridades', titulo:'Bloco G — Prioridades e apoio', perguntas:[
+  {id:'q25_apoios', num:25, tipo:'checkbox', req:true, col:true, label:'Quais apoios do GT Eixo 2/DATER seriam mais úteis para avançar no estado?',
+    opcoes:['Orientação técnica/metodológica','Articulação com instituições estaduais','Articulação com agentes financeiros','Apoio à formação','Apoio à implantação de sistemas','Apoio à formalização das redes','Apoio a Projetos Indutores','Outro','Não há demanda de apoio neste momento'],
+    exclusivos:['Não há demanda de apoio neste momento'], outro:'Outro'},
+  {id:'q26_prioridade', num:26, tipo:'prioridades', req:false, label:'Quais são as principais prioridades do estado para os próximos meses?', help:'Até três prioridades.'},
+  {id:'q27_observacoes', num:27, tipo:'textarea', req:false, label:'Observações adicionais'}
+ ]}
+];
+const TODAS = BLOCOS.flatMap(b=>b.perguntas);
+const visivel = q => !q.showIf || !!q.showIf();
+
+/* ============ RENDERIZAÇÃO ============ */
+const norm = o => typeof o==='string'?{v:o,l:o}:o;
+function opcoesGrupo(name,tipo,opcoes,col){
+  const box=el('div',{class:'opcoes'+(col?' col':'')});
+  opcoes.map(norm).forEach(o=>box.append(el('label',{class:'opt'},el('input',{type:tipo,name,value:o.v,'data-multi':tipo==='checkbox'?'1':null}),el('span',{},o.l))));
+  return box;
+}
+function renderPergunta(q,primeira){
+  const w=el('div',{class:'q'+(primeira?' primeira':''),id:'q_'+q.id});
+  w.append(el('span',{class:'lbl'},q.num!=null?el('span',{class:'num'},q.num+'.'):null,q.label,q.req?el('span',{class:'req',title:'Obrigatória'},'*'):null));
+  if(q.help) w.append(el('p',{class:'help'},q.help));
+  switch(q.tipo){
+    case 'text': w.append(el('input',{type:'text',name:q.id,autocomplete:'off'})); break;
+    case 'email': w.append(el('input',{type:'email',name:q.id,autocomplete:'email'})); break;
+    case 'date': w.append(el('input',{type:'date',name:q.id})); break;
+    case 'textarea': w.append(el('textarea',{name:q.id,style:q.curto?'min-height:60px':null})); break;
+    case 'select': {const s=el('select',{name:q.id},el('option',{value:''},'Selecione…')); q.opcoes.map(norm).forEach(o=>s.append(el('option',{value:o.v},o.l))); w.append(s); break;}
+    case 'number': {const r=el('div',{class:'linha-num'},el('input',{type:'number',name:q.id,min:'0',step:'1',inputmode:'numeric'}));
+      if(q.ns) r.append(el('label',{class:'ns'},el('input',{type:'checkbox',name:q.id+'_ns',value:'sim'}),NS)); w.append(r); break;}
+    case 'radio': w.append(opcoesGrupo(q.id,'radio',q.opcoes,q.col)); break;
+    case 'checkbox': w.append(opcoesGrupo(q.id,'checkbox',q.opcoes,q.col));
+      if(q.outro) w.append(el('input',{type:'text',name:q.id+'_outro',class:'outro-txt hidden',placeholder:q.outroLabel||'Especifique'})); break;
+    case 'numgrid': {const g=el('div',{class:'numgrid'}); q.campos.forEach(([k,l])=>g.append(el('label',{},l,el('input',{type:'number',name:q.id+'__'+k,min:'0',step:'1',inputmode:'numeric'})))); w.append(g); break;}
+    case 'prioridades': [1,2,3].forEach(i=>w.append(el('input',{type:'text',name:q.id+'_'+i,placeholder:'Prioridade '+i,style:'margin-bottom:6px'}))); break;
+    case 'projetos': PROJETOS.forEach(p=>w.append(renderProjeto(p))); break;
+  }
+  w.append(el('div',{class:'erro'}));
+  return w;
+}
+function renderProjeto(p){
+  const c=el('div',{class:'projeto hidden','data-proj':p.id});
+  c.append(el('h3',{},p.id==='outro'?el('span',{class:'nome-outro'},'Outro projeto indutor'):p.longo));
+  c.append(el('h4',{},'Quantidade em cada etapa'));
+  const g=el('div',{class:'numgrid'});
+  ETAPAS.forEach(([k,l])=>g.append(el('label',{},l,el('input',{type:'number',name:`p_${p.id}__${k}`,min:'0',step:'1',inputmode:'numeric'}))));
+  c.append(g);
+  c.append(el('h4',{},'Bancos, agentes financeiros ou fontes de recursos associados'));
+  const box=el('div',{class:'opcoes col'});
+  FONTES.forEach(f=>{
+    const item=el('div',{},el('label',{class:'opt'},el('input',{type:'checkbox',name:`p_${p.id}__fontes`,value:f,'data-multi':'1'}),el('span',{},f)));
+    if(INTERNACIONAIS.includes(f)){
+      const s=el('select',{name:`p_${p.id}__papel_${slug(f)}`},...['','Financiador','Parceiro técnico','Ambos',NS].map(o=>el('option',{value:o},o||'Papel no projeto…')));
+      item.append(el('div',{class:'papel hidden','data-papel':f},'Papel:',s));
+    }
+    box.append(item);
+  });
+  c.append(box);
+  c.append(el('input',{type:'text',name:`p_${p.id}__fontes_outro`,class:'outro-txt hidden',placeholder:'Especifique a outra fonte'}));
+  return c;
+}
+function render(){
+  const form=$('#form'), nav=$('#nav');
+  BLOCOS.forEach(b=>{
+    const s=el('section',{class:'bloco',id:'b_'+b.id},el('h2',{},b.titulo));
+    if(b.desc) s.append(el('p',{class:'bloco-desc'},b.desc));
+    b.perguntas.forEach((q,i)=>s.append(renderPergunta(q,i===0)));
+    form.append(s);
+    nav.append(el('a',{href:'#b_'+b.id,'data-b':b.id},b.nav));
+  });
+  $('#versao').textContent='Formulário '+CONFIG.VERSAO;
+}
+
+/* ============ COMPORTAMENTO ============ */
+function exclusividade(e){
+  const t=e.target; if(t.type!=='checkbox'||!t.dataset.multi||!t.checked) return;
+  const q=TODAS.find(q=>q.id===t.name);
+  const excl=q?(q.exclusivos||[]):(t.name.endsWith('__fontes')?['Ainda sem fonte definida',NS]:[]);
+  ins(t.name).forEach(o=>{ if(o===t) return; if(excl.includes(t.value)||excl.includes(o.value)) o.checked=false; });
+}
+function atualizar(){
+  TODAS.forEach(q=>{
+    const w=$('#q_'+q.id); w.classList.toggle('hidden',!visivel(q));
+    if(q.tipo==='number'&&q.ns){const num=$(`[name="${q.id}"]`),d=isNS(q.id);num.disabled=d;if(d)num.value='';}
+    if(q.outro){$(`[name="${q.id}_outro"]`).classList.toggle('hidden',!has(q.id,q.outro));}
+  });
+  const sel=projSelecionados().map(p=>p.id);
+  $$('.projeto').forEach(c=>{
+    const id=c.dataset.proj; c.classList.toggle('hidden',!sel.includes(id));
+    $$('[data-papel]',c).forEach(d=>d.classList.toggle('hidden',!has(`p_${id}__fontes`,d.dataset.papel)));
+    $(`[name="p_${id}__fontes_outro"]`,c).classList.toggle('hidden',!has(`p_${id}__fontes`,'Outra fonte'));
+  });
+  const nome=v('q14_projetos_outro'); $('.nome-outro').textContent=nome?`Outro projeto indutor: ${nome}`:'Outro projeto indutor';
+  // progresso
+  let tot=0,ok=0;
+  BLOCOS.forEach(b=>{
+    const reqs=b.perguntas.filter(q=>q.req&&visivel(q)); const okB=reqs.filter(q=>!validar(q)).length;
+    tot+=reqs.length; ok+=okB; $(`#nav a[data-b="${b.id}"]`).classList.toggle('ok',reqs.length>0&&okB===reqs.length);
+  });
+  $('#prog').style.width=(tot?ok/tot*100:0)+'%';
+}
+
+/* ============ VALIDAÇÃO ============ */
+const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function validarInteiro(x){if(x==='')return null;const k=Number(x);return Number.isInteger(k)&&k>=0?k:NaN;}
+function validar(q){
+  if(!visivel(q)) return '';
+  switch(q.tipo){
+    case 'number':{
+      if(q.ns&&isNS(q.id)) return '';
+      const k=validarInteiro(v(q.id));
+      if(k===null) return q.req?'Informe um número (use 0 se não houver).':'';
+      if(Number.isNaN(k)) return 'Informe um número inteiro igual ou maior que zero.';
+      if(q.max){const m=q.max(); if(m!=null&&k>m) return q.maxMsg;}
+      return '';}
+    case 'email':{const x=v(q.id); if(!x) return q.req?'Campo obrigatório.':''; return EMAIL_RE.test(x)?'':'Informe um e-mail válido.';}
+    case 'checkbox':{const a=v(q.id); if(q.req&&!a.length) return 'Selecione ao menos uma opção.';
+      if(q.outro&&a.includes(q.outro)&&!v(q.id+'_outro')) return q.outroLabel?'Informe o nome do outro projeto indutor.':'Especifique a opção “'+q.outro+'”.'; return '';}
+    case 'numgrid':{const vals=q.campos.map(([k])=>validarInteiro(v(q.id+'__'+k)));
+      if(vals.some(x=>Number.isNaN(x))) return 'Use apenas números inteiros iguais ou maiores que zero.';
+      if(q.req&&vals.every(x=>x===null)) return 'Preencha ao menos uma situação (use 0 quando não houver).'; return '';}
+    case 'projetos':{
+      for(const p of projSelecionados()){
+        const nome=p.id==='outro'?(v('q14_projetos_outro')||'Outro projeto indutor'):p.curto;
+        const vals=ETAPAS.map(([k])=>validarInteiro(v(`p_${p.id}__${k}`)));
+        if(vals.some(x=>Number.isNaN(x))) return `${nome}: use apenas números inteiros iguais ou maiores que zero.`;
+        if(!vals.some(x=>x>0)) return `${nome}: informe a quantidade em ao menos uma etapa.`;
+        const f=v(`p_${p.id}__fontes`);
+        if(!f.length) return `${nome}: selecione ao menos uma fonte de recursos (ou “Ainda sem fonte definida”).`;
+        if(f.includes('Outra fonte')&&!v(`p_${p.id}__fontes_outro`)) return `${nome}: especifique a outra fonte.`;
+      }
+      return '';}
+    case 'prioridades': return '';
+    default: return q.req&&!v(q.id)?'Campo obrigatório.':'';
+  }
+}
+function marcar(q,msg){const w=$('#q_'+q.id);w.classList.toggle('invalido',!!msg);$('.erro',w).textContent=msg||'';}
+
+/* ============ COLETA ============ */
+function coletar(){
+  const r={ciclo:'',versao_formulario:CONFIG.VERSAO,periodicidade:CONFIG.PERIODICIDADE};
+  const projetos=[];
+  TODAS.forEach(q=>{
+    const vis=visivel(q), id=q.id;
+    switch(q.tipo){
+      case 'number': r[id]=!vis?'':(q.ns&&isNS(id)?NS:(n(id)??'')); break;
+      case 'checkbox': r[id]=vis?v(id).join('; '):''; if(q.outro) r[id+'_outro']=vis&&has(id,q.outro)?v(id+'_outro'):''; break;
+      case 'numgrid': q.campos.forEach(([k])=>r[id+'_'+k]=vis?(n(id+'__'+k)??''):''); break;
+      case 'prioridades': [1,2,3].forEach(i=>r[id+'_'+i]=v(id+'_'+i)); break;
+      case 'projetos': if(vis) projSelecionados().forEach(p=>{
+          const o={projeto:p.curto,projeto_nome:p.id==='outro'?v('q14_projetos_outro'):p.longo};
+          ETAPAS.forEach(([k])=>o['etapa_'+k]=n(`p_${p.id}__${k}`)??0);
+          const f=v(`p_${p.id}__fontes`); o.fontes=f.join('; ');
+          o.fontes_outro=f.includes('Outra fonte')?v(`p_${p.id}__fontes_outro`):'';
+          INTERNACIONAIS.forEach(org=>o['papel_'+slug(org)]=f.includes(org)?v(`p_${p.id}__papel_${slug(org)}`):'');
+          projetos.push(o);
+        }); break;
+      default: r[id]=vis?v(id):'';
+    }
+  });
+  const t=n('q04_territorios_total'), red=n('q06_redes_constituidas');
+  r.ind_cobertura_redes_pct = t ? Math.round((red||0)/t*1000)/10 : '';
+  r.ind_projetos_total = projetos.reduce((s,p)=>s+ETAPAS.reduce((a,[k])=>a+p['etapa_'+k],0),0);
+  r.ind_projetos_contratados = projetos.reduce((s,p)=>s+p.etapa_contratado,0);
+  return {respostas:r, projetos};
+}
+const rotuloCiclo=c=>(CICLOS.find(x=>x.v===c)||{l:c}).l;
+
+/* ============ RASCUNHO ============ */
+function salvarRascunho(){
+  try{const d={};
+    $$('#form [name]').forEach(e=>{ if(e.type==='checkbox'||e.type==='radio'){ if(e.checked)(d[e.name]=d[e.name]||[]).push(e.value);} else d[e.name]=e.value; });
+    localStorage.setItem(CHAVE_RASCUNHO,JSON.stringify(d));
+    $('#rasc').textContent='Rascunho salvo às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  }catch(_){}
+}
+function carregarRascunho(){
+  try{const d=JSON.parse(localStorage.getItem(CHAVE_RASCUNHO)||'null'); if(!d) return;
+    $$('#form [name]').forEach(e=>{const x=d[e.name]; if(x==null) return;
+      if(e.type==='checkbox'||e.type==='radio') e.checked=Array.isArray(x)&&x.includes(e.value); else e.value=x;});
+  }catch(_){}
+}
+
+/* ============ ENVIO ============ */
+async function enviar(ev){
+  ev.preventDefault();
+  let primeiro=null;
+  TODAS.forEach(q=>{const m=validar(q); marcar(q,m); if(m&&!primeiro) primeiro=q;});
+  if(primeiro){$('#q_'+primeiro.id).scrollIntoView({behavior:'smooth',block:'center'}); return;}
+  const payload=coletar(), r=payload.respostas;
+  if(!confirm(`Confirmar o envio das informações de ${r.q01_estado} para o ciclo ${rotuloCiclo(r.ciclo)}?`)) return;
+  const btn=$('#btnEnviar'); btn.disabled=true; btn.textContent='Enviando…';
+  try{
+    if(!CONFIG.ENDPOINT){ mostrarSucesso(payload,'TESTE',true); return; }
+    const resp=await fetch(CONFIG.ENDPOINT,{method:'POST',body:JSON.stringify(payload)});
+    const j=await resp.json();
+    if(!j.ok) throw new Error(j.erro||'falha no registro');
+    mostrarSucesso(payload,j.protocolo,false);
+  }catch(err){
+    alert('Não foi possível enviar ('+err.message+').\nSuas respostas continuam salvas neste navegador. Tente novamente em instantes ou entre em contato com o DATER.');
+  }finally{btn.disabled=false; btn.textContent='Enviar respostas';}
+}
+function mostrarSucesso(payload,protocolo,teste){
+  const r=payload.respostas, s=$('#sucesso');
+  const linhas=[
+    ['Estado',r.q01_estado],['Ciclo',rotuloCiclo(r.ciclo)],['Data de referência',r.data_referencia.split('-').reverse().join('/')],
+    ['Territórios (PAS Nordeste)',r.q04_territorios_total],['Redes constituídas',r.q06_redes_constituidas],
+    ['Cobertura de redes',r.ind_cobertura_redes_pct!==''?r.ind_cobertura_redes_pct+'%':'—'],['Territórios sem rede',r.q07_territorios_sem_rede],
+    ['Planos Safras Territoriais previstos',r.q11_pst_previstos],['Projetos Indutores informados',payload.projetos.map(p=>p.projeto_nome||p.projeto).join('; ')||'—'],
+    ['Projetos contratados/financiados',r.ind_projetos_contratados]
+  ];
+  s.innerHTML='';
+  s.append(el('h2',{},teste?'Teste concluído':'Respostas enviadas'));
+  if(teste) s.append(el('p',{class:'teste'},'Modo de teste: o endereço de envio (ENDPOINT) ainda não foi configurado, então nada foi gravado. Abaixo, os dados que seriam enviados.'));
+  else s.append(el('p',{},'Obrigado! As informações foram registradas. Protocolo: ',el('strong',{},protocolo)));
+  const tb=el('table'); linhas.forEach(([a,b])=>tb.append(el('tr',{},el('td',{},a),el('td',{},String(b??'—')))));
+  s.append(tb);
+  if(teste) s.append(el('pre',{},JSON.stringify(payload,null,2)));
+  s.append(el('div',{class:'acoes no-print'},el('button',{type:'button',class:'btn-sec',id:'btnVoltar'},'Voltar ao formulário'),el('button',{type:'button',class:'btn-pri',id:'btnImprimir'},'Imprimir / salvar comprovante')));
+  $('#telaForm').classList.add('hidden'); s.classList.remove('hidden'); window.scrollTo(0,0);
+  $('#btnVoltar').onclick=()=>{s.classList.add('hidden');$('#telaForm').classList.remove('hidden');};
+  $('#btnImprimir').onclick=()=>window.print();
+}
+
+/* ============ INÍCIO ============ */
+render();
+carregarRascunho();
+const selCiclo=$('[name="ciclo"]');
+if(!CICLOS.some(c=>c.v===selCiclo.value)) selCiclo.value=CICLOS[CICLOS.length-1].v;
+function revalidar(e){ // reavalia o campo editado enquanto se digita (evita saltos de layout ao sair do campo)
+  const nm=e.target.name||'';
+  const q=nm.startsWith('p_')?TODAS.find(q=>q.tipo==='projetos'):TODAS.find(q=>nm===q.id||nm.startsWith(q.id+'_'));
+  if(q&&$('#q_'+q.id).classList.contains('invalido')) marcar(q,validar(q));
+}
+$('#form').addEventListener('input',e=>{exclusividade(e);atualizar();revalidar(e);salvarRascunho();});
+$('#form').addEventListener('change',e=>{atualizar();salvarRascunho();});
+$('#form').addEventListener('submit',enviar);
+$('#btnLimpar').onclick=()=>{ if(!confirm('Apagar todas as respostas deste formulário neste navegador?')) return;
+  try{localStorage.removeItem(CHAVE_RASCUNHO);}catch(_){} $('#form').reset(); selCiclo.value=CICLOS[CICLOS.length-1].v;
+  TODAS.forEach(q=>marcar(q,'')); atualizar(); $('#rasc').textContent=''; };
+atualizar();
+</script>
+</body>
+</html>

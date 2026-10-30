@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel Eixo 2 – PAS Nordeste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --azul:#1c3ff2;--azul-esc:#132c9e;--amarelo:#ffcc00;--faixa:#a7bfec;
+  --fundo:#f4f6fb;--surface-1:#fcfcfb;--borda:#dfe3ec;--grid:#eceae5;
+  --text-primary:#1d2333;--text-secondary:#52514e;--text-muted:#7a7974;
+  --series-1:#2a78d6;--neutro:#d9d7d0;
+  --seq-1:#b7d3f6;--seq-2:#6da7ec;--seq-3:#2a78d6;--seq-4:#1c5cab;--seq-5:#0d366b;--seq-ns:#c9c8c2;
+  --good:#0ca30c;--warning:#fab219;--serious:#ec835a;--critical:#d03b3b
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--fundo);color:var(--text-primary);line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.topo{background:var(--faixa);padding:22px 0 18px}
+header h1{font-family:Lexend,sans-serif;color:var(--azul);margin:0;font-size:clamp(1.3rem,3vw,1.8rem);line-height:1.2}
+header .sub{margin:.3rem 0 0;color:var(--azul-esc);font-weight:500;font-size:.95rem}
+.barra-ctrl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 0;font-size:.88rem;color:var(--text-secondary)}
+.barra-ctrl select{font:inherit;padding:6px 10px;border:1px solid var(--borda);border-radius:8px;background:#fff;color:var(--text-primary)}
+.barra-ctrl button{font:inherit;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--azul);background:#fff;color:var(--azul);cursor:pointer}
+.status-at{display:inline-flex;align-items:center;gap:6px}
+.pulso{width:8px;height:8px;border-radius:50%;background:var(--good)}
+.pulso.off{background:var(--critical)}
+.demo{background:#fff4cc;color:#7a4f00;padding:8px 12px;border-radius:8px;font-size:.87rem;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface-1);border:1px solid var(--borda);border-radius:12px;padding:14px 16px}
+.kpi .rot{font-size:.82rem;color:var(--text-secondary)}
+.kpi .val{font-family:Lexend,sans-serif;font-size:1.9rem;font-weight:600;line-height:1.15;margin-top:4px}
+.kpi .comp{font-size:.82rem;color:var(--text-muted);margin-top:2px}
+.kpi .delta{font-size:.8rem;font-weight:600;margin-top:4px;color:var(--text-secondary)}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:860px){.grade{grid-template-columns:1fr}}
+.card{background:var(--surface-1);border:1px solid var(--borda);border-radius:12px;padding:16px 16px 12px;margin-bottom:16px;min-width:0}
+.card h2{font-family:Lexend,sans-serif;font-size:1rem;color:var(--text-primary);margin:0}
+.card .nota{font-size:.82rem;color:var(--text-muted);margin:2px 0 10px}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--text-secondary);margin:0 0 8px}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda i{width:12px;height:12px;border-radius:3px;display:inline-block}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:Inter,system-ui,sans-serif}
+.alvo{fill:transparent;cursor:default}
+.alvo:hover{fill:rgba(28,63,242,.06)}
+#tip{position:fixed;pointer-events:none;background:#1d2333;color:#fff;font-size:.8rem;padding:8px 10px;border-radius:8px;max-width:280px;z-index:20;opacity:0;transition:opacity .1s;line-height:1.4}
+#tip b{font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:600;color:var(--text-secondary);font-size:.78rem;background:#f6f7fa;position:sticky;top:0}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+th.n{text-align:right}
+.tabwrap{overflow-x:auto}
+.st{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.st b{font-size:.75rem;width:16px;height:16px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-weight:700}
+.st.good b{background:var(--good)} .st.warning b{background:var(--warning);color:#3d2c00} .st.serious b{background:var(--serious)} .st.neutro b{background:#b9b8b2}
+.vazio{color:var(--text-muted);font-size:.88rem;padding:18px 0;text-align:center}
+.semresp{color:var(--text-muted);font-style:italic}
+footer{color:var(--text-muted);font-size:.78rem;text-align:center;padding:10px 0 30px}
+</style>
+</head>
+<body>
+<header class="topo"><div class="wrap">
+  <h1>Painel do Eixo 2 — ATER e Crédito</h1>
+  <p class="sub">PAS Nordeste · Redes Territoriais de ATER e Crédito nos nove estados</p>
+</div></header>
+
+<main class="wrap">
+  <div class="barra-ctrl">
+    <label>Ciclo: <select id="selCiclo"></select></label>
+    <span class="status-at"><span class="pulso" id="pulso"></span><span id="txtAt">Carregando…</span></span>
+    <button type="button" id="btnAt">Atualizar agora</button>
+  </div>
+  <div id="aviso"></div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="grade">
+    <div class="card"><h2>Cobertura das redes por estado</h2><p class="nota">Territórios com e sem Rede Territorial de ATER e Crédito constituída</p>
+      <div class="legenda"><span><i style="background:var(--series-1)"></i>Com rede constituída</span><span><i style="background:var(--neutro)"></i>Sem rede</span></div>
+      <div id="gCobertura"></div></div>
+    <div class="card"><h2>Evolução das redes constituídas</h2><p class="nota">Soma dos estados que responderam em cada ciclo</p>
+      <div id="gEvolucao"></div></div>
+  </div>
+
+  <div class="grade">
+    <div class="card"><h2>Projetos Indutores por etapa</h2><p class="nota">Quantidade de projetos/propostas informada pelos estados no ciclo</p>
+      <div class="legenda" id="legEtapas"></div>
+      <div id="gProjetos"></div></div>
+    <div class="card"><h2>Planos Safras Territoriais por situação</h2><p class="nota">Soma dos estados no ciclo</p>
+      <div class="legenda" id="legPst"></div>
+      <div id="gPst"></div></div>
+  </div>
+
+  <div class="card"><h2>Situação dos compromissos por estado</h2><p class="nota">Formação, sistemas de informação, ATER Digital e ações complementares</p>
+    <div class="tabwrap" id="tCompromissos"></div></div>
+
+  <div class="card"><h2>Dados por estado</h2><p class="nota">Último envio de cada estado no ciclo selecionado</p>
+    <div class="tabwrap" id="tDados"></div></div>
+</main>
+<div id="tip"></div>
+<footer>DATER/SAF/MDA · GT Eixo 2 – ATER e Crédito · Fonte: formulário de monitoramento do Eixo 2</footer>
+
+<script>
+/* ============ CONFIGURAÇÃO ============ */
+const CONFIG = {
+  ENDPOINT: 'https://script.google.com/macros/s/AKfycbxIF40dP9clAMVU2AZ1t4n3Stt7Qrj5RvVW0sKLg9fyiiN3ag03iPEtkLM3AhNfknfmkg/exec',        // mesma URL do App da Web usada no formulário (termina em /exec). Vazio = dados de exemplo.
+  INTERVALO_MIN: 1     // de quantos em quantos minutos o painel verifica novos envios
+};
+
+const ESTADOS=['Alagoas','Bahia','Ceará','Maranhão','Paraíba','Pernambuco','Piauí','Rio Grande do Norte','Sergipe'];
+const UF={'Alagoas':'AL','Bahia':'BA','Ceará':'CE','Maranhão':'MA','Paraíba':'PB','Pernambuco':'PE','Piauí':'PI','Rio Grande do Norte':'RN','Sergipe':'SE'};
+const ETAPAS=[['nao_iniciado','Não iniciado','--seq-1'],['em_elaboracao','Em elaboração','--seq-2'],['concluido','Elaboração concluída','--seq-3'],['encaminhado','Encaminhado ao agente financeiro','--seq-4'],['contratado','Contratado/financiado','--seq-5'],['nao_sei','Não sei/confirmar','--seq-ns']];
+const PST=[['nao_iniciados','Não iniciados','--seq-1'],['em_elaboracao','Em elaboração','--seq-2'],['concluidos','Concluídos','--seq-3'],['em_implementacao','Em implementação','--seq-5'],['sem_previsao','Sem previsão','--neutro'],['nao_sei','Não sei/confirmar','--seq-ns']];
+const COMPROMISSOS=[['q18_formacao','Formação'],['q20_sistema_estadual','Sistema estadual'],['q21_dados_sit','Dados no SIT'],['q22_ater_digital','ATER Digital'],['q23_mutirao_caf','Mutirão CAF'],['q24_apoio_car','Apoio CAR']];
+const STATUS={
+  good:['Realizadas','Implantado e em uso','Dados inseridos/enviados','Em funcionamento','Sim, já ocorre'],
+  warning:['Em planejamento','Em implantação','Planejadas/em articulação','Em planejamento/articulação','Dados em levantamento/organização','Em construção'],
+  serious:['Não','Não existem','Ainda não iniciado','Não realizadas nem planejadas','Ainda não']
+};
+const ICONE={good:'✓',warning:'…',serious:'✕',neutro:'?'};
+
+/* ============ ESTADO ============ */
+let DADOS=null, ultimoEnvio=null, cicloSel=null, demo=false;
+const $=s=>document.querySelector(s);
+const num=x=>{const k=Number(x);return x===''||x==null||isNaN(k)?null:k;};
+const soma=(arr,f)=>arr.reduce((s,o)=>s+(num(f(o))||0),0);
+const fmt=n=>n==null?'—':n.toLocaleString('pt-BR');
+const pct=(a,b)=>b?Math.round(a/b*1000)/10:null;
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const rotCiclo=c=>{const m=/^(\d{4})-([ST])(\d)$/.exec(c||'');if(!m)return c;return m[2]==='S'?`${m[3]}º sem. ${m[1]}`:`${m[3]}º trim. ${m[1]}`;};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ============ CARGA ============ */
+async function carregar(forcar){
+  try{
+    let d;
+    if(!CONFIG.ENDPOINT){ d=dadosExemplo(); demo=true; }
+    else{
+      const r=await fetch(CONFIG.ENDPOINT+(CONFIG.ENDPOINT.includes('?')?'&':'?')+'acao=dados&t='+Date.now());
+      d=await r.json(); if(!d.ok) throw new Error(d.erro||'resposta inválida');
+    }
+    $('#pulso').classList.remove('off');
+    const mudou = forcar || !DADOS || d.ultimo_envio!==ultimoEnvio;
+    ultimoEnvio=d.ultimo_envio;
+    $('#txtAt').textContent=`Verificado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`+(d.ultimo_envio?` · último envio: ${new Date(d.ultimo_envio).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`:'');
+    if(mudou){ DADOS=d; montarCiclos(); desenhar(); }
+  }catch(err){
+    $('#pulso').classList.add('off');
+    $('#txtAt').textContent='Sem conexão com a planilha ('+err.message+'). Nova tentativa em '+CONFIG.INTERVALO_MIN+' min.';
+  }
+}
+function montarCiclos(){
+  const ciclos=[...new Set(DADOS.situacao.map(o=>o.ciclo))].sort();
+  const sel=$('#selCiclo'); const atual=cicloSel;
+  sel.innerHTML=ciclos.map(c=>`<option value="${esc(c)}">${esc(rotCiclo(c))}</option>`).join('');
+  cicloSel = ciclos.includes(atual)?atual:ciclos[ciclos.length-1];
+  if(cicloSel) sel.value=cicloSel;
+}
+
+/* ============ DESENHO ============ */
+function desenhar(){
+  $('#aviso').innerHTML=demo?'<div class="demo">Dados de exemplo: o endereço da planilha (ENDPOINT) ainda não foi configurado neste painel.</div>':'';
+  const doCiclo=DADOS.situacao.filter(o=>o.ciclo===cicloSel);
+  const projs=DADOS.projetos.filter(p=>p.ciclo===cicloSel);
+  const ciclos=[...new Set(DADOS.situacao.map(o=>o.ciclo))].sort();
+  const anterior=ciclos[ciclos.indexOf(cicloSel)-1];
+  const doAnt=anterior?DADOS.situacao.filter(o=>o.ciclo===anterior):null;
+  if(!cicloSel){ ['#kpis','#gCobertura','#gEvolucao','#gProjetos','#gPst','#tCompromissos','#tDados'].forEach(s=>$(s).innerHTML=''); $('#kpis').innerHTML='<div class="vazio">Ainda não há envios registrados.</div>'; return; }
+  kpis(doCiclo,projs,doAnt);
+  grafCobertura(doCiclo);
+  grafEvolucao(ciclos);
+  grafEmpilhado('#gProjetos','#legEtapas',agruparProjetos(projs),ETAPAS,'projetos');
+  grafEmpilhado('#gPst','#legPst',[{rot:'Total do ciclo',vals:Object.fromEntries(PST.map(([k])=>[k,soma(doCiclo,o=>o['q12_pst_'+k])]))}],PST,'planos');
+  tabCompromissos(doCiclo);
+  tabDados(doCiclo);
+}
+
+function kpis(rows,projs,ant){
+  const T=soma(rows,o=>o.q04_territorios_total), R=soma(rows,o=>o.q06_redes_constituidas), S=soma(rows,o=>o.q07_territorios_sem_rede);
+  const prev=soma(rows,o=>num(o.q11_pst_previstos)), conc=soma(rows,o=>o.q12_pst_concluidos)+soma(rows,o=>o.q12_pst_em_implementacao);
+  const totP=projs.reduce((s,p)=>s+ETAPAS.reduce((a,[k])=>a+(num(p['etapa_'+k])||0),0),0), contr=soma(projs,p=>p.etapa_contratado);
+  const dR=ant?R-soma(ant,o=>o.q06_redes_constituidas):null;
+  const delta=d=>d==null?'':`<div class="delta">${d>0?'▲ +'+d:d<0?'▼ '+d:'= sem variação'} em relação ao ciclo anterior</div>`;
+  const t=[
+    ['Estados que responderam',`${rows.length}<span style="font-size:1rem;color:var(--text-muted)"> / 9</span>`,rows.length<9?'Faltam: '+ESTADOS.filter(e=>!rows.some(o=>o.q01_estado===e)).map(e=>UF[e]).join(', '):'Todos os estados',''],
+    ['Redes constituídas',fmt(R),`de ${fmt(T)} territórios`,delta(dR)],
+    ['Cobertura de redes',pct(R,T)==null?'—':pct(R,T).toLocaleString('pt-BR')+'%','territórios com rede / total',''],
+    ['Territórios sem rede',fmt(S),'a constituir',''],
+    ['Planos Safras concluídos ou em implementação',fmt(conc),`de ${fmt(prev)} previstos`,''],
+    ['Projetos Indutores contratados',fmt(contr),`de ${fmt(totP)} informados`,'']
+  ];
+  $('#kpis').innerHTML=t.map(([r,v,c,d])=>`<div class="kpi"><div class="rot">${r}</div><div class="val">${v}</div><div class="comp">${esc(c)}</div>${d}</div>`).join('');
+}
+
+/* --- tooltip --- */
+const tip=$('#tip');
+function dica(el,html){
+  el.addEventListener('mousemove',e=>{tip.innerHTML=html;tip.style.opacity=1;const w=tip.offsetWidth;tip.style.left=Math.min(e.clientX+14,innerWidth-w-8)+'px';tip.style.top=(e.clientY+14)+'px';});
+  el.addEventListener('mouseleave',()=>tip.style.opacity=0);
+}
+const NS='http://www.w3.org/2000/svg';
+function s(tag,attrs,txt){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(txt!=null)e.textContent=txt;return e;}
+// barra com cantos arredondados só na ponta direita
+function barra(x,y,w,h,cor,pontaRedonda){
+  if(w<=0) return null;
+  const r=pontaRedonda?Math.min(4,w,h/2):0;
+  return s('path',{d:`M${x},${y}h${w-r}${r?`a${r},${r} 0 0 1 ${r},${r}v${h-2*r}a${r},${r} 0 0 1 -${r},${r}`:`v${h}`}h-${w-r}z`,fill:cor});
+}
+
+function grafCobertura(rows){
+  const box=$('#gCobertura'); box.innerHTML='';
+  const W=520, L=34, Rm=96, linha=30, bh=16, H=ESTADOS.length*linha+24;
+  const max=Math.max(1,...rows.map(o=>num(o.q04_territorios_total)||0));
+  const sx=v=>(W-L-Rm)*v/max;
+  const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Cobertura das redes por estado'});
+  // grade
+  const passo=max<=10?2:max<=30?5:10;
+  for(let v=0;v<=max;v+=passo){const x=L+sx(v);svg.append(s('line',{x1:x,x2:x,y1:0,y2:H-20,stroke:css('--grid')}));svg.append(s('text',{x,y:H-6,'font-size':10,fill:css('--text-muted'),'text-anchor':'middle'},v));}
+  ESTADOS.forEach((e,i)=>{
+    const y=i*linha+6, o=rows.find(r=>r.q01_estado===e);
+    svg.append(s('text',{x:0,y:y+bh-3,'font-size':12,'font-weight':600,fill:css('--text-secondary')},UF[e]));
+    if(!o){svg.append(s('text',{x:L,y:y+bh-3,'font-size':11,fill:css('--text-muted'),'font-style':'italic'},'sem resposta neste ciclo'));return;}
+    const t=num(o.q04_territorios_total)||0, c=num(o.q06_redes_constituidas)||0, sr=num(o.q07_territorios_sem_rede)||0;
+    const wc=sx(c), ws=sx(sr), gap=wc>0&&ws>0?2:0;
+    const b1=barra(L,y,wc,bh,css('--series-1'),ws===0); if(b1)svg.append(b1);
+    const b2=barra(L+wc+gap,y,Math.max(0,ws-gap),bh,css('--neutro'),true); if(b2)svg.append(b2);
+    const p=pct(c,t);
+    svg.append(s('text',{x:L+sx(Math.max(t,c+sr))+6,y:y+bh-3,'font-size':11,fill:css('--text-primary')},`${c}/${t}${p!=null?' · '+p.toLocaleString('pt-BR')+'%':''}`));
+    const alvo=s('rect',{x:0,y:y-6,width:W,height:linha,class:'alvo'}); svg.append(alvo);
+    dica(alvo,`<b>${e}</b><br>${t} territórios no PAS Nordeste<br>${c} com rede constituída · ${sr} sem rede${c+sr!==t?'<br><i>soma diferente do total (ver justificativa)</i>':''}<br>Homologados (Territórios da Cidadania): ${esc(o.q05_territorios_homologados)}`);
+  });
+  box.append(svg);
+}
+
+function grafEvolucao(ciclos){
+  const box=$('#gEvolucao'); box.innerHTML='';
+  const pts=ciclos.map(c=>{const rows=DADOS.situacao.filter(o=>o.ciclo===c);return {c,R:soma(rows,o=>o.q06_redes_constituidas),T:soma(rows,o=>o.q04_territorios_total),n:rows.length};});
+  const W=520,H=260,L=36,Rm=44,T=16,B=34;
+  const max=Math.max(1,...pts.map(p=>p.R)); const passoY=[1,2,5,10,20,25,50,100].find(k=>k*4>=max*1.1)||Math.ceil(max/4); const topo=passoY*4;
+  const sx=i=>pts.length===1?L+(W-L-Rm)/2:L+(W-L-Rm)*i/(pts.length-1), sy=v=>T+(H-T-B)*(1-v/topo);
+  const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Evolução das redes constituídas'});
+  for(let k=0;k<=4;k++){const v=passoY*k,y=sy(v);svg.append(s('line',{x1:L,x2:W-Rm,y1:y,y2:y,stroke:css('--grid')}));svg.append(s('text',{x:L-6,y:y+4,'font-size':10,fill:css('--text-muted'),'text-anchor':'end'},v));}
+  if(pts.length>1) svg.append(s('polyline',{points:pts.map((p,i)=>`${sx(i)},${sy(p.R)}`).join(' '),fill:'none',stroke:css('--series-1'),'stroke-width':2,'stroke-linejoin':'round'}));
+  pts.forEach((p,i)=>{
+    svg.append(s('circle',{cx:sx(i),cy:sy(p.R),r:p.c===cicloSel?6:4.5,fill:css('--series-1'),stroke:css('--surface-1'),'stroke-width':2}));
+    svg.append(s('text',{x:sx(i),y:H-12,'font-size':11,fill:css(p.c===cicloSel?'--text-primary':'--text-secondary'),'font-weight':p.c===cicloSel?600:400,'text-anchor':'middle'},rotCiclo(p.c)));
+    if(i===pts.length-1) svg.append(s('text',{x:sx(i),y:sy(p.R)-12,'font-size':12,'font-weight':600,fill:css('--text-primary'),'text-anchor':'middle'},p.R));
+    const w=pts.length===1?120:(W-L-Rm)/(pts.length-1);
+    const alvo=s('rect',{x:sx(i)-w/2,y:T,width:w,height:H-T-B,class:'alvo'}); svg.append(alvo);
+    dica(alvo,`<b>${rotCiclo(p.c)}</b><br>${p.R} redes constituídas<br>${p.T} territórios · cobertura ${pct(p.R,p.T)??'—'}%<br>${p.n} de 9 estados responderam`);
+  });
+  box.append(svg);
+  if(pts.length===1) box.append(Object.assign(document.createElement('p'),{className:'nota',textContent:'A linha de evolução aparece a partir do segundo ciclo de monitoramento.'}));
+}
+
+function agruparProjetos(projs){
+  const g={}; projs.forEach(p=>{const k=p.projeto==='Outro projeto indutor'?'Outros projetos':p.projeto;g[k]=g[k]||{rot:k,vals:{},estados:new Set()};ETAPAS.forEach(([e])=>g[k].vals[e]=(g[k].vals[e]||0)+(num(p['etapa_'+e])||0));g[k].estados.add(UF[p.estado]||p.estado);});
+  return Object.values(g).sort((a,b)=>sumv(b)-sumv(a));
+}
+const sumv=o=>Object.values(o.vals).reduce((a,b)=>a+b,0);
+
+function grafEmpilhado(sel,selLeg,grupos,cats,unid){
+  const box=$(sel); box.innerHTML='';
+  $(selLeg).innerHTML=cats.map(([,l,c])=>`<span><i style="background:var(${c})"></i>${l}</span>`).join('');
+  if(!grupos.length||grupos.every(g=>sumv(g)===0)){box.innerHTML='<div class="vazio">Nenhum dado informado neste ciclo.</div>';return;}
+  const W=520,L=196,Rm=34,linha=34,bh=18,H=grupos.length*linha+6;
+  const max=Math.max(1,...grupos.map(sumv)), sx=v=>(W-L-Rm)*v/max;
+  const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,role:'img'});
+  grupos.forEach((g,i)=>{
+    const y=i*linha+6; let x=L;
+    const rot=g.rot.length>30?g.rot.slice(0,29)+'…':g.rot;
+    svg.append(s('text',{x:0,y:y+bh-4,'font-size':12,fill:css('--text-secondary')},rot));
+    const ativos=cats.filter(([k])=>g.vals[k]>0);
+    ativos.forEach(([k,l,c],j)=>{
+      const w=sx(g.vals[k]), gap=j<ativos.length-1?2:0;
+      const b=barra(x,y,Math.max(0.5,w-gap),bh,css(c),j===ativos.length-1); if(b){svg.append(b);dica(b,`<b>${esc(g.rot)}</b><br>${l}: ${g.vals[k]} ${unid}`);}
+      x+=w;
+    });
+    svg.append(s('text',{x:x+6,y:y+bh-4,'font-size':11,'font-weight':600,fill:css('--text-primary')},sumv(g)));
+    const alvo=s('rect',{x:0,y:y-6,width:L,height:linha,class:'alvo'}); svg.append(alvo);
+    dica(alvo,`<b>${esc(g.rot)}</b><br>`+cats.filter(([k])=>g.vals[k]>0).map(([k,l])=>`${l}: ${g.vals[k]}`).join('<br>')+(g.estados?`<br>Estados: ${[...g.estados].join(', ')}`:''));
+  });
+  box.append(svg);
+}
+
+function chip(v){
+  if(!v) return '<span class="semresp">—</span>';
+  let cl='neutro'; for(const k in STATUS) if(STATUS[k].includes(v)) cl=k;
+  if(v.startsWith('Não se aplica')) return `<span class="st neutro"><b>–</b>Não se aplica</span>`;
+  return `<span class="st ${cl}" title="${esc(v)}"><b>${ICONE[cl]}</b>${esc(v)}</span>`;
+}
+function tabCompromissos(rows){
+  let h='<table><thead><tr><th>Estado</th>'+COMPROMISSOS.map(([,l])=>`<th>${l}</th>`).join('')+'</tr></thead><tbody>';
+  ESTADOS.forEach(e=>{const o=rows.find(r=>r.q01_estado===e);
+    h+=`<tr><td><b>${e}</b></td>`+(o?COMPROMISSOS.map(([k])=>`<td>${chip(o[k])}</td>`).join(''):`<td colspan="${COMPROMISSOS.length}" class="semresp">sem resposta neste ciclo</td>`)+'</tr>';});
+  $('#tCompromissos').innerHTML=h+'</tbody></table><p class="nota" style="margin-top:8px"><span class="st good"><b>✓</b>realizado/em uso</span> &nbsp; <span class="st warning"><b>…</b>em andamento</span> &nbsp; <span class="st serious"><b>✕</b>não iniciado</span> &nbsp; <span class="st neutro"><b>?</b>a confirmar</span></p>';
+}
+function tabDados(rows){
+  const col=[['Estado',o=>o.q01_estado],['Territórios',o=>o.q04_territorios_total,1],['Homologados TC',o=>o.q05_territorios_homologados,1],['Com rede',o=>o.q06_redes_constituidas,1],['Sem rede',o=>o.q07_territorios_sem_rede,1],['Cobertura',o=>o.ind_cobertura_redes_pct!==''&&o.ind_cobertura_redes_pct!=null?String(o.ind_cobertura_redes_pct).replace('.',',')+'%':'—',1],['PST previstos',o=>o.q11_pst_previstos,1],['Projetos contratados',o=>o.ind_projetos_contratados,1],['Data de referência',o=>o.data_referencia?new Date(o.data_referencia).toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—']];
+  let h='<table><thead><tr>'+col.map(([l,,n])=>`<th class="${n?'n':''}">${l}</th>`).join('')+'</tr></thead><tbody>';
+  rows.slice().sort((a,b)=>a.q01_estado.localeCompare(b.q01_estado)).forEach(o=>{h+='<tr>'+col.map(([,f,n])=>`<td class="${n?'n':''}">${esc(f(o)??'—')}</td>`).join('')+'</tr>';});
+  $('#tDados').innerHTML=rows.length?h+'</tbody></table>':'<div class="vazio">Nenhum envio neste ciclo.</div>';
+}
+
+/* ============ DADOS DE EXEMPLO (apenas sem ENDPOINT) ============ */
+function dadosExemplo(){
+  const base={Alagoas:[6,4],Bahia:[27,9],Ceará:[13,7],Maranhão:[18,5],Paraíba:[15,8],Pernambuco:[12,6],Piauí:[11,3],'Rio Grande do Norte':[10,6],Sergipe:[8,5]};
+  const st=['Realizadas','Em planejamento','Não realizadas nem planejadas'], sit=[];
+  const projetos=[]; let h=7;
+  const rnd=()=>{h=(h*9301+49297)%233280;return h/233280;};
+  ['2026-S1','2026-S2'].forEach((c,ci)=>{
+    ESTADOS.forEach((e,i)=>{
+      if(ci===1&&(e==='Maranhão'||e==='Piauí'))return;
+      const [t,r0]=base[e], r=Math.min(t,r0-(ci===0?Math.ceil(r0/3):0));
+      const prot=UF[e]+'-'+c;
+      sit.push({protocolo:prot,ciclo:c,q01_estado:e,data_referencia:ci?'2026-10-15':'2026-05-30',q04_territorios_total:t,q05_territorios_homologados:Math.round(t*.7),q06_redes_constituidas:r,q07_territorios_sem_rede:t-r,
+        q11_pst_previstos:Math.round(t/3),q12_pst_nao_iniciados:1,q12_pst_em_elaboracao:Math.max(0,Math.round(t/3)-2),q12_pst_concluidos:ci,q12_pst_em_implementacao:ci?0:0,q12_pst_sem_previsao:0,q12_pst_nao_sei:0,
+        q18_formacao:st[(i+ci)%3],q20_sistema_estadual:['Em implantação','Ainda não iniciado','Implantado e em uso',"Não sei/preciso confirmar"][(i+ci)%4],q21_dados_sit:['Dados em levantamento/organização','Ainda não iniciado','Dados inseridos/enviados'][(i+2*ci)%3],
+        q22_ater_digital:['Em planejamento','Não existem','Em funcionamento','Em implantação'][(i+ci)%4],q23_mutirao_caf:['Realizadas','Planejadas/em articulação','Não'][i%3],q24_apoio_car:['Planejadas/em articulação','Não se aplica','Realizadas','Não'][(i+ci)%4],
+        ind_cobertura_redes_pct:pct(r,t),ind_projetos_contratados:0});
+      ['Quintais Produtivos','Circuito Nordestino de Feiras','Pronaf Mais Alimentos','CD-PAF Territorial','Avicultura Caipira Familiar de Postura'].forEach((p,j)=>{ if(rnd()<.45) return;
+        const o={protocolo:prot,ciclo:c,estado:e,projeto:p};ETAPAS.forEach(([k],m)=>o['etapa_'+k]=m===5?(rnd()<.2?1:0):Math.floor(rnd()*(ci?3:2)*(m<2?1.4:.8)));projetos.push(o);
+        sit[sit.length-1].ind_projetos_contratados+=o.etapa_contratado;});
+    });
+  });
+  return {ok:true,ultimo_envio:'2026-10-29T14:20:00Z',situacao:sit,projetos};
+}
+
+/* ============ INÍCIO ============ */
+$('#selCiclo').addEventListener('change',e=>{cicloSel=e.target.value;desenhar();});
+$('#btnAt').addEventListener('click',()=>carregar(true));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)carregar();});
+carregar(true);
+setInterval(()=>{if(!document.hidden)carregar();},CONFIG.INTERVALO_MIN*60000);
+</script>
+</body>
+</html>
