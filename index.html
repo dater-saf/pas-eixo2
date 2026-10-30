@@ -201,8 +201,9 @@ select:disabled{background:#f0f2f6;color:var(--texto);opacity:1}
 const CONFIG = {
   ENDPOINT: 'https://script.google.com/macros/s/AKfycbxIF40dP9clAMVU2AZ1t4n3Stt7Qrj5RvVW0sKLg9fyiiN3ag03iPEtkLM3AhNfknfmkg/exec',                 // URL do App da Web do Google Apps Script (termina em /exec). Vazio = modo de teste.
   PAINEL_URL: 'painel.html',   // endereço do painel (mesmo repositório)
+  CICLO_INICIAL: '2026-Q1',     // primeiro ciclo da série de monitoramento (2026 – 1º quadrimestre)
   PERIODICIDADE: 'quadrimestral', // 'quadrimestral', 'semestral' ou 'trimestral'
-  VERSAO: 'v1.2 – out/2026'
+  VERSAO: 'v1.3 – out/2026'
 };
 const CHAVE_RASCUNHO = 'pas_ne_eixo2_rascunho';
 
@@ -224,20 +225,15 @@ const INTERNACIONAIS = ['FIDA','GIZ','IICA','Banco Mundial'];
 const slug = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
 
 function gerarCiclos(){
-  const d=new Date(), y=d.getFullYear(), m=d.getMonth(), out=[];
-  if(CONFIG.PERIODICIDADE==='quadrimestral'){
-    const nomes=['1º quadrimestre (jan–abr)','2º quadrimestre (mai–ago)','3º quadrimestre (set–dez)'];
-    const q=Math.floor(m/4);
-    for(let i=-1;i<=0;i++){let qq=q+i,yy=y;if(qq<0){qq+=3;yy--;}out.push({v:`${yy}-Q${qq+1}`,l:`${yy} – ${nomes[qq]}`});}
-  }else if(CONFIG.PERIODICIDADE==='trimestral'){
-    const nomes=['1º trimestre (jan–mar)','2º trimestre (abr–jun)','3º trimestre (jul–set)','4º trimestre (out–dez)'];
-    const t=Math.floor(m/3);
-    for(let i=-1;i<=0;i++){let tt=t+i,yy=y;if(tt<0){tt+=4;yy--;}out.push({v:`${yy}-T${tt+1}`,l:`${yy} – ${nomes[tt]}`});}
-  }else{
-    const nomes=['1º semestre (jan–jun)','2º semestre (jul–dez)'];
-    const s=m<6?0:1;
-    for(let i=-1;i<=0;i++){let ss=s+i,yy=y;if(ss<0){ss+=2;yy--;}out.push({v:`${yy}-S${ss+1}`,l:`${yy} – ${nomes[ss]}`});}
-  }
+  // Lista todos os ciclos desde CONFIG.CICLO_INICIAL até o ciclo atual (o atual fica por último e vem selecionado)
+  const P={quadrimestral:{n:3,l:'Q',nomes:['1º quadrimestre (jan–abr)','2º quadrimestre (mai–ago)','3º quadrimestre (set–dez)']},
+           semestral:{n:2,l:'S',nomes:['1º semestre (jan–jun)','2º semestre (jul–dez)']},
+           trimestral:{n:4,l:'T',nomes:['1º trimestre (jan–mar)','2º trimestre (abr–jun)','3º trimestre (jul–set)','4º trimestre (out–dez)']}}[CONFIG.PERIODICIDADE];
+  const d=new Date(), atual=d.getFullYear()*P.n+Math.floor(d.getMonth()/(12/P.n));
+  const m=/^(\d{4})-[A-Z](\d)$/.exec(CONFIG.CICLO_INICIAL||'');
+  const inicio=m?Math.min(atual,Number(m[1])*P.n+Number(m[2])-1):atual-1;
+  const out=[];
+  for(let k=inicio;k<=atual;k++){const y=Math.floor(k/P.n),i=k%P.n;out.push({v:`${y}-${P.l}${i+1}`,l:`${y} – ${P.nomes[i]}`});}
   return out;
 }
 const CICLOS = gerarCiclos();
