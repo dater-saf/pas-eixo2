@@ -88,6 +88,10 @@ th.n{text-align:right}
 .sit{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .sit i{width:11px;height:11px;border-radius:3px;display:inline-block}
 .prev-tag{font-size:.72rem;color:var(--text-muted)}
+
+.camadas{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:.8rem;color:#5b6478;margin:8px 0 4px}
+.camadas label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.camadas input{accent-color:#1c3ff2}
 footer{color:var(--text-muted);font-size:.78rem;text-align:center;padding:10px 0 30px}
 
 /* ===== Cabeçalho com logos ===== */
@@ -128,7 +132,7 @@ header.topo .faixa-cores{height:5px;background:linear-gradient(90deg,#f6a523 0 2
   <div id="vCiclo">
   <section class="kpis" id="kpis"></section>
 
-  <div class="card"><h2>Mapa dos territórios</h2><p class="nota">Os 81 territórios do PAS Nordeste, conforme o último envio de cada estado no ciclo. Passe o mouse sobre um território para ver o detalhe.</p>
+  <div class="card"><h2>Mapa dos territórios</h2><p class="nota">Os 81 territórios do PAS Nordeste, conforme o último envio de cada estado no ciclo. Passe o mouse sobre um território para ver o detalhe; os limites estaduais e municipais podem ser ligados como camadas de referência.</p>
     <div class="mapa-grade">
       <div id="mapaNE" class="mapa-box"></div>
       <div>
@@ -209,6 +213,7 @@ header.topo .faixa-cores{height:5px;background:linear-gradient(90deg,#f6a523 0 2
 <footer>DATER/SAF/MDA · GT Eixo 2 – ATER e Crédito · Fonte: formulário de monitoramento do Eixo 2</footer>
 
 <script src="territorios.js"></script>
+<script src="malhas.js"></script>
 <script>
 /* ============ CONFIGURAÇÃO ============ */
 const CONFIG = {
@@ -441,12 +446,45 @@ const SITS_P=[['Rede constituída','#178a3b','Constituída'],['Articulação ain
   ['Em definição das instituições participantes','#3f86e0','Definição'],['Em pactuação/formalização','#16438f','Pactuação'],['Não sei/preciso confirmar','#c9c8c2','Não sei']];
 const HOM_P=[['Sim','#2a78d6','Homologado'],['Não','#ec835a','Não homologado'],['Não sei','#c9c8c2','Não sei']];
 const modoMapas={ne:'rede',est:'rede'};
-function caminhosMapa(lista,W,H,pad){
-  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; const lat=lista.reduce((a,t)=>a+(t.rings[0]||[[0,0]])[0][1],0)/(lista.length||1), k=Math.cos(lat*Math.PI/180);
-  lista.forEach(t=>t.rings.forEach(r=>r.forEach(([x,y])=>{x*=k;if(x<x0)x0=x;if(x>x1)x1=x;if(-y<y0)y0=-y;if(-y>y1)y1=-y;})));
+/* ---- camadas de referência: limites de estados e municípios (malhas.js) ---- */
+const CAMADAS={estados:true,municipios:false};
+const MALHAS=(()=>{const m=window.PAS_MALHAS; if(!m) return null; const e=m.escala;
+  const prep=arr=>arr.map(a=>{let x=a[0],y=a[1]; const pts=[[x/e,y/e]]; let x0=x,x1=x,y0=y,y1=y;
+    for(let i=2;i<a.length;i+=2){x+=a[i];y+=a[i+1];pts.push([x/e,y/e]); if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;}
+    return {pts,bb:[x0/e,y0/e,x1/e,y1/e]};});
+  return {mun:prep(m.municipios),est:prep(m.estados),rot:m.rotulos};})();
+function bboxLista(lista){let a=1e9,b=1e9,c=-1e9,d=-1e9; lista.forEach(t=>t.rings.forEach(r=>r.forEach(([x,y])=>{if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y;}))); return [a,b,c,d];}
+function bboxUF(ufs){ if(!MALHAS) return null; const r=MALHAS.rot.filter(o=>ufs.includes(o.uf)); if(!r.length) return null;
+  return [Math.min(...r.map(o=>o.bb[0])),Math.min(...r.map(o=>o.bb[1])),Math.max(...r.map(o=>o.bb[2])),Math.max(...r.map(o=>o.bb[3]))]; }
+function projecao(bb,W,H,pad){
+  const k=Math.cos((bb[1]+bb[3])/2*Math.PI/180), x0=bb[0]*k, x1=bb[2]*k, y0=-bb[3], y1=-bb[1];
   const sc=Math.min((W-2*pad)/(x1-x0),(H-2*pad)/(y1-y0)), ox=(W-(x1-x0)*sc)/2, oy=(H-(y1-y0)*sc)/2;
-  const P=([x,y])=>[(x*k-x0)*sc+ox,(-y-y0)*sc+oy];
+  return ([x,y])=>[(x*k-x0)*sc+ox,(-y-y0)*sc+oy];
+}
+function caminhosMapa(lista,W,H,pad,bb){
+  const P=projecao(bb||bboxLista(lista),W,H,pad);
   return {P, itens:lista.map(t=>({t,d:t.rings.map(r=>'M'+r.map(c=>P(c).map(v=>v.toFixed(1)).join(',')).join('L')+'Z').join('')}))};
+}
+function linhasCamada(linhas,P,bb){
+  const m=0.3; return linhas.filter(l=>!(l.bb[2]<bb[0]-m||l.bb[0]>bb[2]+m||l.bb[3]<bb[1]-m||l.bb[1]>bb[3]+m))
+    .map(l=>'M'+l.pts.map(c=>P(c).map(v=>v.toFixed(1)).join(',')).join('L')).join('');
+}
+/* acrescenta ao SVG as linhas das camadas ligadas (sem eventos, por cima dos territórios) */
+function desenharCamadas(svg,P,bb,ufRotulos,NSv){
+  if(!MALHAS) return;
+  const mk=(tag,at)=>{const e=document.createElementNS(NSv,tag); for(const k in at) e.setAttribute(k,at[k]); return e;};
+  if(CAMADAS.municipios) svg.append(mk('path',{d:linhasCamada(MALHAS.mun,P,bb),fill:'none',stroke:'#7c8799','stroke-width':.45,'stroke-opacity':.75,'pointer-events':'none'}));
+  if(CAMADAS.estados) svg.append(mk('path',{d:linhasCamada(MALHAS.est,P,bb),fill:'none',stroke:'#14213d','stroke-width':1.6,'stroke-linejoin':'round','pointer-events':'none'}));
+  (ufRotulos||[]).forEach(uf=>{const r=MALHAS.rot.find(o=>o.uf===uf); if(!r) return; const [x,y]=P([r.x,r.y]);
+    const t=mk('text',{x,y,'font-size':16,'font-weight':700,'text-anchor':'middle','pointer-events':'none',fill:'#14213d',stroke:'#ffffff','stroke-width':3,'paint-order':'stroke'}); t.textContent=uf; svg.append(t);});
+}
+function controlesCamadas(onChange){
+  const box=document.createElement('div'); box.className='camadas';
+  box.innerHTML='<span>Camadas:</span><label><input type="checkbox" data-c="estados"> Limites estaduais</label><label><input type="checkbox" data-c="municipios"> Limites municipais</label>';
+  box.querySelectorAll('input').forEach(i=>{i.checked=CAMADAS[i.dataset.c]; i.disabled=!MALHAS; i.addEventListener('change',()=>{CAMADAS[i.dataset.c]=i.checked;
+    document.querySelectorAll(`.camadas input[data-c="${i.dataset.c}"]`).forEach(o=>o.checked=i.checked); onChange();});});
+  if(!MALHAS) box.title='Arquivo malhas.js não encontrado';
+  return box;
 }
 function corTerr(row,modo){
   if(!row) return null;
@@ -457,16 +495,14 @@ function descTerr(t,row){
   if(!row) return `<b>${esc(t.nome)} – ${t.uf}</b><br>${t.municipios} municípios<br><i>Sem resposta do estado neste ciclo</i>`;
   return `<b>${esc(t.nome)} – ${t.uf}</b><br>${t.municipios} municípios<br>Rede: ${esc(row.situacao_rede||'—')}${String(row.previsao_proximo_ciclo)==='Sim'?'<br>Previsão de constituir até o próximo quadrimestre':''}<br>Homologado nos Territórios da Cidadania: ${esc(row.homologado||'—')}`;
 }
-function desenharMapa(sel,lista,porCod,modo,W,H,rotulosUF){
+function desenharMapa(sel,lista,porCod,modo,W,H,ufs){
   const box=$(sel); box.innerHTML='';
   if(!lista.length){box.innerHTML='<div class="vazio">Base de territórios indisponível.</div>';return;}
-  const {P,itens}=caminhosMapa(lista,W,H,8);
-  const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Mapa dos territórios'});
+  const bb=bboxUF(ufs)||bboxLista(lista);
+  const {P,itens}=caminhosMapa(lista,W,H,8,bb);
+  const svg=s('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Mapa dos territórios',style:'overflow:hidden'});
   itens.forEach(({t,d})=>{const row=porCod[t.cod]; const pth=s('path',{d,'fill-rule':'evenodd',class:'terr-p',fill:corTerr(row,modo)||'#ffffff'}); svg.append(pth); dica(pth,descTerr(t,row));});
-  if(rotulosUF){
-    const g={}; lista.forEach(t=>t.rings.forEach(r=>r.forEach(c=>{const [x,y]=P(c); const o=g[t.uf]=g[t.uf]||{x:0,y:0,n:0}; o.x+=x;o.y+=y;o.n++;})));
-    Object.entries(g).forEach(([uf,o])=>svg.append(s('text',{x:o.x/o.n,y:o.y/o.n,'font-size':16,'font-weight':700,'text-anchor':'middle','pointer-events':'none',fill:'#14213d',stroke:'#ffffff','stroke-width':3,'paint-order':'stroke'},uf)));
-  }
+  desenharCamadas(svg,P,bb,ufs.length>1?ufs:[],NS);
   box.append(svg);
 }
 function legendaMapa(sel,lista,porCod,modo){
@@ -481,7 +517,7 @@ function territoriosDoCiclo(c){
 }
 function mapaPanorama(){
   const porCod=territoriosDoCiclo(cicloSel), modo=modoMapas.ne;
-  desenharMapa('#mapaNE',TERR,porCod,modo,520,640,true);
+  desenharMapa('#mapaNE',TERR,porCod,modo,520,640,['MA','PI','CE','RN','PB','PE','AL','SE','BA']);
   const {sem}=legendaMapa('#mapaNELeg',TERR,porCod,modo);
   const prev=Object.values(porCod).filter(r=>String(r.previsao_proximo_ciclo)==='Sim').length;
   const faltam=[...new Set(TERR.filter(t=>!porCod[t.cod]).map(t=>t.uf))];
@@ -494,7 +530,7 @@ function territoriosEstado(rows){
   (DADOS.territorios||[]).filter(t=>protos.includes(t.protocolo)).forEach(t=>{(porProto[t.protocolo]=porProto[t.protocolo]||{})[Number(t.cod_territorio)]=t;});
   const comTerr=rows.filter(o=>porProto[o.protocolo]);
   const ult=comTerr.length?porProto[comTerr[comTerr.length-1].protocolo]:{};
-  desenharMapa('#mapaEst',lista,ult,modo,520,380,false);
+  desenharMapa('#mapaEst',lista,ult,modo,520,380,[uf]);
   legendaMapa('#mapaEstLeg',lista,ult,modo);
   if(!comTerr.length){$('#tEstTerr').innerHTML='<div class="vazio">O estado ainda não informou a situação por território.</div>';return;}
   const chipS=r=>{if(!r) return '<span class="semresp">—</span>'; const x=SITS_P.find(([l])=>l===r.situacao_rede)||['',  '#ddd',r.situacao_rede||'—'];
@@ -663,6 +699,7 @@ function dadosExemplo(){
 /* ============ INÍCIO ============ */
 $('#selCiclo').addEventListener('change',e=>{cicloSel=e.target.value;desenhar();});
 $('#btnAt').addEventListener('click',()=>carregar(true));
+document.querySelectorAll('.mapa-modo').forEach(g=>g.after(controlesCamadas(()=>desenhar())));
 document.querySelectorAll('.mapa-modo').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
   modoMapas[g.dataset.alvo]=b.dataset.m; g.querySelectorAll('button').forEach(x=>x.classList.toggle('ativa',x===b)); desenhar();}));
 $('#selEstado').addEventListener('change',e=>{estadoSel=e.target.value;desenhar();});
