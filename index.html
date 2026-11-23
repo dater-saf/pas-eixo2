@@ -203,7 +203,7 @@ const CONFIG = {
   PAINEL_URL: 'painel.html',   // endereço do painel (mesmo repositório)
   CICLO_INICIAL: '2026-Q1',     // primeiro ciclo da série de monitoramento (2026 – 1º quadrimestre)
   PERIODICIDADE: 'quadrimestral', // 'quadrimestral', 'semestral' ou 'trimestral'
-  VERSAO: 'v1.3 – out/2026'
+  VERSAO: 'v1.4 – nov/2026'
 };
 const CHAVE_RASCUNHO = 'pas_ne_eixo2_rascunho';
 
@@ -283,11 +283,15 @@ const BLOCOS = [
     max:()=>n('q04_territorios_total'), maxMsg:'Não pode ser maior que o total de territórios (pergunta 4).'},
   {id:'q07_justificativa', tipo:'textarea', req:true, curto:true, label:'A soma das perguntas 6 e 7 é diferente do total da pergunta 4. Explique brevemente a diferença.',
     showIf:()=>{const t=n('q04_territorios_total'),a=n('q06_redes_constituidas'),b=n('q07_territorios_sem_rede');return t!=null&&a!=null&&b!=null&&a+b!==t;}},
-  {id:'q08_situacao_sem_rede', num:8, tipo:'checkbox', req:true, label:'Qual é a situação dos territórios que ainda não possuem rede?', help:'Pode marcar mais de uma opção se diferentes territórios estiverem em situações distintas.',
-    opcoes:['Articulação iniciada','Em definição das instituições participantes','Em processo de pactuação/formalização','Sem articulação iniciada','Sem previsão definida',NS], exclusivos:[NS],
+  {id:'q08_sem_rede', num:8, tipo:'numgrid', req:true, label:'Dos territórios ainda sem rede (pergunta 7), quantos estão em cada situação?',
+    help:'Use 0 quando não houver territórios na situação. A soma deve corresponder ao total da pergunta 7.',
+    campos:[['nao_iniciada','Articulação ainda não iniciada'],['iniciada','Articulação iniciada'],['definicao','Em definição das instituições participantes'],['pactuacao','Em pactuação/formalização'],['nao_sei','Não sei/preciso confirmar']],
     showIf:()=>n('q07_territorios_sem_rede')>0},
-  {id:'q09_previsao_constituicao', num:9, tipo:'radio', req:true, label:'Para os territórios sem rede, existe previsão de constituição?',
-    opcoes:['Sim, para todos','Sim, para alguns','Não há previsão definida','A articulação ainda não foi iniciada',NS],
+  {id:'q08_justificativa', tipo:'textarea', req:true, curto:true, label:'A soma das situações (pergunta 8) é diferente do total de territórios sem rede (pergunta 7). Explique brevemente a diferença.',
+    showIf:()=>{const t=n('q07_territorios_sem_rede'); if(!(t>0))return false; const q=TODAS.find(x=>x.id==='q08_sem_rede'); const vals=q.campos.map(([k])=>n('q08_sem_rede__'+k)); if(vals.every(x=>x==null))return false; return vals.reduce((a,x)=>a+(x||0),0)!==t;}},
+  {id:'q09_previsao_proximo_ciclo', num:9, tipo:'number', req:true, ns:true, label:'Desses territórios sem rede, quantos têm previsão de constituir a rede até o fim do próximo quadrimestre?',
+    help:'Informe 0 se não houver previsão. No ciclo seguinte, essa previsão pode ser comparada com as redes efetivamente constituídas.',
+    max:()=>n('q07_territorios_sem_rede'), maxMsg:'Não pode ser maior que o total de territórios sem rede (pergunta 7).',
     showIf:()=>n('q07_territorios_sem_rede')>0},
   {id:'q10_desafios_redes', num:10, tipo:'checkbox', req:false, col:true, label:'Quais são os principais desafios ou apoios necessários para avançar na constituição/consolidação das redes?',
     opcoes:['Articulação entre instituições','Definição de governança/coordenação','Formalização ou pactuação','Mobilização dos atores territoriais','Equipe técnica insuficiente','Recursos financeiros','Articulação com agentes financeiros','Apoio metodológico do DATER/GT Eixo 2','Outro','Não há dificuldades relevantes'],
@@ -299,6 +303,15 @@ const BLOCOS = [
     campos:[['nao_iniciados','Não iniciados'],['em_elaboracao','Em elaboração'],['concluidos','Concluídos'],['em_implementacao','Em implementação/acompanhamento'],['sem_previsao','Sem previsão definida'],['nao_sei','Não sei/preciso confirmar']]},
   {id:'q12_justificativa', tipo:'textarea', req:true, curto:true, label:'A soma das situações (pergunta 12) é diferente do total previsto (pergunta 11). Explique brevemente a diferença.',
     showIf:()=>{const t=n('q11_pst_previstos'); if(t==null||isNS('q11_pst_previstos'))return false; const c=BLOCOS[3].perguntas[1].campos; const vals=c.map(([k])=>n('q12_pst__'+k)); if(vals.every(x=>x==null))return false; return vals.reduce((s,x)=>s+(x||0),0)!==t;}},
+  {id:'q12b_cadeias_produtivas', num:'12.1', tipo:'checkbox', req:true, col:true, maxSel:5,
+    label:'Quais são as principais cadeias produtivas contempladas nos Planos Safras Territoriais do estado?',
+    help:'Considere os planos concluídos, em elaboração ou em implementação. Marque até 5 cadeias.',
+    opcoes:['Arroz','Feijão','Mandioca','Milho','Fruticultura','Hortaliças','Café','Cacau',
+            'Bovinocultura de leite','Bovinocultura de corte','Caprinocultura e ovinocultura','Avicultura e ovos','Suinocultura',
+            'Apicultura e meliponicultura','Pesca e aquicultura','Sociobiodiversidade e extrativismo','Produção agroecológica ou orgânica diversificada',
+            'Agroindustrialização familiar','Outra',NS],
+    exclusivos:[NS], outro:'Outra', outroLabel:'Especifique a(s) outra(s) cadeia(s)',
+    showIf:()=>isNS('q11_pst_previstos')||n('q11_pst_previstos')>0},
   {id:'q13_integracao_plano_safra', num:13, tipo:'radio', req:true, label:'Há articulação para integrar a metodologia dos Planos Safras Territoriais ao planejamento de ATER/crédito e ao Plano Safra nacional?',
     opcoes:['Sim, já ocorre','Em construção','Ainda não',NS]}
  ]},
@@ -447,7 +460,8 @@ function validar(q){
       return '';}
     case 'email':{const x=v(q.id); if(!x) return q.req?'Campo obrigatório.':''; return EMAIL_RE.test(x)?'':'Informe um e-mail válido.';}
     case 'checkbox':{const a=v(q.id); if(q.req&&!a.length) return 'Selecione ao menos uma opção.';
-      if(q.outro&&a.includes(q.outro)&&!v(q.id+'_outro')) return q.outroLabel?'Informe o nome do outro projeto indutor.':'Especifique a opção “'+q.outro+'”.'; return '';}
+      if(q.maxSel&&a.filter(x=>x!==NS).length>q.maxSel) return `Marque no máximo ${q.maxSel} opções.`;
+      if(q.outro&&a.includes(q.outro)&&!v(q.id+'_outro')) return q.id==='q14_projetos'?'Informe o nome do outro projeto indutor.':'Especifique a opção “'+q.outro+'”.'; return '';}
     case 'numgrid':{const vals=q.campos.map(([k])=>validarInteiro(v(q.id+'__'+k)));
       if(vals.some(x=>Number.isNaN(x))) return 'Use apenas números inteiros iguais ou maiores que zero.';
       if(q.req&&vals.every(x=>x===null)) return 'Preencha ao menos uma situação (use 0 quando não houver).'; return '';}
@@ -548,7 +562,7 @@ function linhasComprovante(payload){
       switch(q.tipo){
         case 'select': linhas.push([rot, q.id==='ciclo'?esc(rotuloCiclo(r.ciclo)):fmtv(r[q.id])]); break;
         case 'date': linhas.push([rot, r[q.id]?esc(r[q.id].split('-').reverse().join('/')):vazio]); break;
-        case 'checkbox': {let v=r[q.id]?esc(r[q.id]).split('; ').join('<br>'):vazio; if(r[q.id+'_outro']) v+=`<br><i>${q.outroLabel?'Nome':'Especificação'}: ${esc(r[q.id+'_outro'])}</i>`; linhas.push([rot,v]); break;}
+        case 'checkbox': {let v=r[q.id]?esc(r[q.id]).split('; ').join('<br>'):vazio; if(r[q.id+'_outro']) v+=`<br><i>${q.id==='q14_projetos'?'Nome':'Especificação'}: ${esc(r[q.id+'_outro'])}</i>`; linhas.push([rot,v]); break;}
         case 'numgrid': linhas.push([rot, q.campos.map(([k,l])=>`${l}: <b>${r[q.id+'_'+k]===''?0:esc(r[q.id+'_'+k])}</b>`).join('<br>')]); break;
         case 'prioridades': {const ps=[1,2,3].map(i=>r[q.id+'_'+i]).filter(Boolean); linhas.push([rot, ps.length?ps.map((p,i)=>`${i+1}. ${esc(p)}`).join('<br>'):vazio]); break;}
         case 'projetos':

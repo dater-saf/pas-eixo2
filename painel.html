@@ -129,6 +129,14 @@ header.topo .faixa-cores{height:5px;background:linear-gradient(90deg,#f6a523 0 2
       <div id="gPst"></div></div>
   </div>
 
+  <div class="grade">
+    <div class="card"><h2>Territórios sem rede por situação</h2><p class="nota">Em que etapa estão os territórios que ainda não têm rede, por estado</p>
+      <div class="legenda" id="legSemRede"></div><div id="gSemRede"></div>
+      <p class="nota" id="notaPrevisao" style="margin-top:10px"></p></div>
+    <div class="card"><h2>Cadeias produtivas dos Planos Safras</h2><p class="nota">Número de estados que citaram cada cadeia entre as principais do seu Plano Safra Territorial</p>
+      <div id="gCadeias"></div></div>
+  </div>
+
   <div class="card"><h2>Situação dos compromissos por estado</h2><p class="nota">Formação, sistemas de informação, ATER Digital e ações complementares</p>
     <div class="tabwrap" id="tCompromissos"></div></div>
 
@@ -148,8 +156,12 @@ header.topo .faixa-cores{height:5px;background:linear-gradient(90deg,#f6a523 0 2
       <div class="card"><h2>Planos Safras Territoriais por situação</h2><p class="nota">Cada barra é um ciclo</p>
         <div class="legenda" id="legEstPst"></div><div id="gEstPst"></div></div>
     </div>
-    <div class="card"><h2>Projetos Indutores por etapa</h2><p class="nota">Cada barra é um ciclo: o avanço aparece quando a parte escura (contratado) cresce</p>
-      <div class="legenda" id="legEstProj"></div><div id="gEstProj"></div></div>
+    <div class="grade">
+      <div class="card"><h2>Projetos Indutores por etapa</h2><p class="nota">Cada barra é um ciclo: o avanço aparece quando a parte escura (contratado) cresce</p>
+        <div class="legenda" id="legEstProj"></div><div id="gEstProj"></div></div>
+      <div class="card"><h2>Territórios sem rede por situação</h2><p class="nota">Cada barra é um ciclo; a previsão informada aparece ao passar o mouse</p>
+        <div class="legenda" id="legEstSemRede"></div><div id="gEstSemRede"></div></div>
+    </div>
     <div class="card"><h2>Compromissos ao longo dos ciclos</h2><p class="nota">Formação, sistemas de informação, ATER Digital e ações complementares</p>
       <div class="tabwrap" id="tEstComp"></div></div>
     <div class="card"><h2>Histórico das respostas</h2><p class="nota">Todas as informações do estado, lado a lado por ciclo (nome e e-mail do ponto focal não são exibidos)</p>
@@ -169,6 +181,9 @@ const CONFIG = {
 const ESTADOS=['Alagoas','Bahia','Ceará','Maranhão','Paraíba','Pernambuco','Piauí','Rio Grande do Norte','Sergipe'];
 const UF={'Alagoas':'AL','Bahia':'BA','Ceará':'CE','Maranhão':'MA','Paraíba':'PB','Pernambuco':'PE','Piauí':'PI','Rio Grande do Norte':'RN','Sergipe':'SE'};
 const ETAPAS=[['nao_iniciado','Não iniciado','--seq-1'],['em_elaboracao','Em elaboração','--seq-2'],['concluido','Elaboração concluída','--seq-3'],['encaminhado','Encaminhado ao agente financeiro','--seq-4'],['contratado','Contratado/financiado','--seq-5'],['nao_sei','Não sei/confirmar','--seq-ns']];
+const SEMREDE=[['nao_iniciada','Articulação não iniciada','--seq-1'],['iniciada','Articulação iniciada','--seq-2'],['definicao','Definição das instituições','--seq-3'],['pactuacao','Pactuação/formalização','--seq-5'],['nao_sei','Não sei/confirmar','--seq-ns']];
+const temSemRede=o=>SEMREDE.some(([k])=>num(o['q08_sem_rede_'+k])!=null);
+const valsSemRede=o=>Object.fromEntries(SEMREDE.map(([k])=>[k,num(o['q08_sem_rede_'+k])||0]));
 const PST=[['nao_iniciados','Não iniciados','--seq-1'],['em_elaboracao','Em elaboração','--seq-2'],['concluidos','Concluídos','--seq-3'],['em_implementacao','Em implementação','--seq-5'],['sem_previsao','Sem previsão','--neutro'],['nao_sei','Não sei/confirmar','--seq-ns']];
 const COMPROMISSOS=[['q18_formacao','Formação'],['q20_sistema_estadual','Sistema estadual'],['q21_dados_sit','Dados no SIT'],['q22_ater_digital','ATER Digital'],['q23_mutirao_caf','Mutirão CAF'],['q24_apoio_car','Apoio CAR']];
 const STATUS={
@@ -234,6 +249,11 @@ function desenhar(){
   grafEvolucao(ciclos);
   grafEmpilhado('#gProjetos','#legEtapas',agruparProjetos(projs),ETAPAS,'projetos');
   grafEmpilhado('#gPst','#legPst',[{rot:'Total do ciclo',vals:Object.fromEntries(PST.map(([k])=>[k,soma(doCiclo,o=>o['q12_pst_'+k])]))}],PST,'planos');
+  const comSit=doCiclo.filter(temSemRede);
+  grafEmpilhado('#gSemRede','#legSemRede',comSit.slice().sort((a,b)=>a.q01_estado.localeCompare(b.q01_estado)).map(o=>({rot:UF[o.q01_estado]||o.q01_estado,vals:valsSemRede(o),estados:new Set([o.q01_estado])})),SEMREDE,'territórios');
+  const prev=doCiclo.filter(o=>num(o.q09_previsao_proximo_ciclo)!=null);
+  $('#notaPrevisao').textContent=prev.length?`Previsão informada: ${soma(prev,o=>o.q09_previsao_proximo_ciclo)} nova(s) rede(s) até o fim do próximo quadrimestre, em ${prev.length} estado(s).`:'';
+  grafCadeias(doCiclo);
   tabCompromissos(doCiclo);
   tabDados(doCiclo);
 }
@@ -324,7 +344,7 @@ const sumv=o=>Object.values(o.vals).reduce((a,b)=>a+b,0);
 
 function grafEmpilhado(sel,selLeg,grupos,cats,unid){
   const box=$(sel); box.innerHTML='';
-  $(selLeg).innerHTML=cats.map(([,l,c])=>`<span><i style="background:var(${c})"></i>${l}</span>`).join('');
+  if(selLeg) $(selLeg).innerHTML=cats.map(([,l,c])=>`<span><i style="background:var(${c})"></i>${l}</span>`).join('');
   if(!grupos.length||grupos.every(g=>sumv(g)===0)){box.innerHTML='<div class="vazio">Nenhum dado informado neste ciclo.</div>';return;}
   const W=520,L=196,Rm=34,linha=34,bh=18,H=grupos.length*linha+6;
   const max=Math.max(1,...grupos.map(sumv)), sx=v=>(W-L-Rm)*v/max;
@@ -346,6 +366,17 @@ function grafEmpilhado(sel,selLeg,grupos,cats,unid){
   box.append(svg);
 }
 
+function grafCadeias(rows){
+  const cont={};
+  rows.forEach(o=>{
+    String(o.q12b_cadeias_produtivas||'').split('; ').filter(c=>c&&c!=='Não sei/preciso confirmar').forEach(c=>{
+      const nome=c==='Outra'?'Outras cadeias':c; cont[nome]=cont[nome]||{rot:nome,vals:{n:0},estados:new Set()};
+      cont[nome].vals.n++; cont[nome].estados.add(UF[o.q01_estado]||o.q01_estado);
+    });
+  });
+  const lista=Object.values(cont).sort((a,b)=>b.vals.n-a.vals.n||a.rot.localeCompare(b.rot)).slice(0,12);
+  grafEmpilhado('#gCadeias',null,lista,[['n','Estados que citaram','--series-1']],'estado(s)');
+}
 function chip(v){
   if(!v) return '<span class="semresp">—</span>';
   let cl='neutro'; for(const k in STATUS) if(STATUS[k].includes(v)) cl=k;
@@ -386,6 +417,8 @@ function desenharEstado(){
   if(!rows.length){ alvos.forEach(s=>$(s).innerHTML=''); $('#kpisEstado').innerHTML='<div class="vazio">Este estado ainda não enviou respostas.</div>'; return; }
   kpisEstado(rows);
   grafEstRedes(rows);
+  grafEmpilhado('#gEstSemRede','#legEstSemRede',rows.filter(temSemRede).map(o=>({rot:rotCiclo(o.ciclo),vals:valsSemRede(o),
+    detalhe:new Set(num(o.q09_previsao_proximo_ciclo)!=null?[`previsão de ${o.q09_previsao_proximo_ciclo} nova(s) rede(s) até o próximo quadrimestre`]:(o.q09_previsao_proximo_ciclo?[`previsão: ${o.q09_previsao_proximo_ciclo}`]:[]))})),SEMREDE,'territórios');
   grafEmpilhado('#gEstPst','#legEstPst',rows.map(o=>({rot:rotCiclo(o.ciclo),vals:Object.fromEntries(PST.map(([k])=>[k,num(o['q12_pst_'+k])||0]))})),PST,'planos');
   grafEmpilhado('#gEstProj','#legEstProj',rows.map(o=>{const ps=DADOS.projetos.filter(p=>p.protocolo===o.protocolo);
     return {rot:rotCiclo(o.ciclo),vals:Object.fromEntries(ETAPAS.map(([k])=>[k,soma(ps,p=>p['etapa_'+k])])),detalhe:new Set(ps.map(p=>p.projeto_nome||p.projeto))};}),ETAPAS,'projetos');
@@ -469,9 +502,12 @@ const CAMPOS_HIST=[
   ['Instituição do ponto focal',o=>o.q03_instituicao],
   ['Territórios (PAS Nordeste)',o=>o.q04_territorios_total],['Homologados (Territórios da Cidadania)',o=>o.q05_territorios_homologados],
   ['Redes constituídas',o=>o.q06_redes_constituidas],['Territórios sem rede',o=>o.q07_territorios_sem_rede],['Justificativa (soma ≠ total)',o=>o.q07_justificativa],
-  ['Situação dos territórios sem rede',o=>o.q08_situacao_sem_rede],['Previsão de constituição',o=>o.q09_previsao_constituicao],
+  ['Territórios sem rede por situação',o=>temSemRede(o)?SEMREDE.map(([k,l])=>num(o['q08_sem_rede_'+k])?`${l}: ${o['q08_sem_rede_'+k]}`:'').filter(Boolean).join('; '):(o.q08_situacao_sem_rede||'')],
+  ['Justificativa (situação ≠ sem rede)',o=>o.q08_justificativa],
+  ['Previsão de novas redes até o próximo quadrimestre',o=>o.q09_previsao_proximo_ciclo!==''&&o.q09_previsao_proximo_ciclo!=null?o.q09_previsao_proximo_ciclo:(o.q09_previsao_constituicao||'')],
   ['Desafios para as redes',o=>[o.q10_desafios_redes,o.q10_desafios_redes_outro].filter(Boolean).join(' — ')],
   ['Planos Safras previstos',o=>o.q11_pst_previstos],
+  ['Cadeias produtivas dos Planos Safras',o=>[o.q12b_cadeias_produtivas,o.q12b_cadeias_produtivas_outro].filter(Boolean).join(' — ')],
   ['Planos Safras por situação',o=>PST.map(([k,l])=>num(o['q12_pst_'+k])?`${l}: ${o['q12_pst_'+k]}`:'').filter(Boolean).join('; ')],
   ['Integração ao Plano Safra',o=>o.q13_integracao_plano_safra],
   ['Projetos Indutores',o=>[o.q14_projetos,o.q14_projetos_outro].filter(Boolean).join(' — ')],
