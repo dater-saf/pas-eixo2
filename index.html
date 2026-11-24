@@ -149,6 +149,20 @@ select:disabled{background:#f0f2f6;color:var(--texto);opacity:1}
 .comp-leg i{width:11px;height:11px;border-radius:2px;border:1px solid #9aa1b0;display:inline-block}
 .comp-nota{grid-column:1/-1;font-size:.75rem;color:var(--suave);margin:0}
 @media print{.comp-mapas{break-inside:avoid;page-break-inside:avoid}}
+/* ===== Territórios – validação e PST ===== */
+.terr-tab select:disabled{background:#f3f4f7;color:#9aa1b0;border-style:dashed}
+.pst-tab td:first-child{width:26%}
+.cad{position:relative}
+.cad summary{cursor:pointer;list-style:none;border:1px solid var(--borda);border-radius:8px;padding:6px 8px;font-size:.82rem;background:#fff;color:var(--texto)}
+.cad summary::-webkit-details-marker{display:none}
+.cad summary::after{content:' ▾';color:var(--suave)}
+.cad[open] summary{border-color:var(--azul)}
+.cad.cad-excesso summary{border-color:var(--erro);color:var(--erro)}
+.cad-lista{display:grid;grid-template-columns:1fr;gap:2px;margin-top:6px;padding:8px;border:1px solid var(--borda);border-radius:8px;background:#fbfcff;max-height:260px;overflow:auto;min-width:240px}
+.cad-lista label{display:flex;gap:6px;align-items:flex-start;font-size:.8rem;padding:2px 0;cursor:pointer}
+.cad-lista input[type=checkbox]{margin-top:2px;accent-color:var(--azul)}
+.cad-outro{margin-top:6px;font-size:.8rem!important;padding:6px 8px!important}
+.cad-na{color:#9aa1b0}
 /* ===== Territórios (bloco B) ===== */
 .camadas{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:.8rem;color:#5b6478;margin:8px 0 4px}
 .camadas label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
@@ -174,7 +188,7 @@ select:disabled{background:#f0f2f6;color:var(--texto);opacity:1}
 .terr-totais b{font-size:1.1rem;font-family:Lexend,sans-serif}
 .terr-totais small{display:block;font-size:.76rem;color:var(--suave)}
 .terr-tabwrap{overflow-x:auto}
-.terr-tab{width:100%;border-collapse:collapse;font-size:.86rem;min-width:620px}
+.terr-tab{width:100%;border-collapse:collapse;font-size:.86rem;min-width:760px}
 .terr-tab th{text-align:left;font-size:.75rem;color:var(--suave);font-weight:600;padding:6px;border-bottom:2px solid var(--borda);vertical-align:bottom}
 .terr-tab td{padding:6px;border-bottom:1px solid #eef1f7;vertical-align:middle}
 .terr-tab td:first-child{width:32%}
@@ -254,7 +268,7 @@ const CONFIG = {
   PAINEL_URL: 'painel.html',   // endereço do painel (mesmo repositório)
   CICLO_INICIAL: '2026-Q1',     // primeiro ciclo da série de monitoramento (2026 – 1º quadrimestre)
   PERIODICIDADE: 'quadrimestral', // 'quadrimestral', 'semestral' ou 'trimestral'
-  VERSAO: 'v1.5 – nov/2026'
+  VERSAO: 'v1.6 – nov/2026'
 };
 const CHAVE_RASCUNHO = 'pas_ne_eixo2_rascunho';
 
@@ -289,23 +303,6 @@ function gerarCiclos(){
 }
 const CICLOS = gerarCiclos();
 
-/* ============ TERRITÓRIOS ============ */
-const TERR=(window.PAS_TERRITORIOS||[]);
-const UF_DE={'Alagoas':'AL','Bahia':'BA','Ceará':'CE','Maranhão':'MA','Paraíba':'PB','Pernambuco':'PE','Piauí':'PI','Rio Grande do Norte':'RN','Sergipe':'SE'};
-const HOM=['Sim','Não','Não sei'];
-const SITS=[['constituida','Rede constituída','#178a3b'],['nao_iniciada','Articulação ainda não iniciada','#cde2fb'],['iniciada','Articulação iniciada','#8fbbf2'],
-            ['definicao','Em definição das instituições participantes','#3f86e0'],['pactuacao','Em pactuação/formalização','#16438f'],['nao_sei','Não sei/preciso confirmar','#c9c8c2']];
-const COR_HOM={'Sim':'#2a78d6','Não':'#ec835a','Não sei':'#c9c8c2'};
-const sitPorRotulo=Object.fromEntries(SITS.map(([k,l])=>[l,k]));
-let TERR_UF=[], modoMapa='rede';
-const terrDoEstado=est=>TERR.filter(t=>t.uf===UF_DE[est]);
-function lerTerr(t){ return {hom:v(`t_${t.cod}_hom`), sit:v(`t_${t.cod}_sit`), prev:!!v(`t_${t.cod}_prev`)}; }
-function totaisTerr(){
-  const o={total:TERR_UF.length,hom:0,hom_ns:0,rede:0,prev:0,sem:{}}; SITS.forEach(([k])=>o.sem[k]=0);
-  TERR_UF.forEach(t=>{const x=lerTerr(t); if(x.hom==='Sim')o.hom++; if(x.hom==='Não sei')o.hom_ns++;
-    const k=sitPorRotulo[x.sit]; if(k==='constituida')o.rede++; else if(k){o.sem[k]++; if(x.prev)o.prev++;}});
-  o.semRede=o.total-o.rede; return o;
-}
 /* ---- camadas de referência: limites de estados e municípios (malhas.js) ---- */
 const CAMADAS={estados:true,municipios:false};
 const MALHAS=(()=>{const m=window.PAS_MALHAS; if(!m) return null; const e=m.escala;
@@ -346,58 +343,166 @@ function controlesCamadas(onChange){
   if(!MALHAS) box.title='Arquivo malhas.js não encontrado';
   return box;
 }
+/* ============ TERRITÓRIOS ============ */
+const TERR=(window.PAS_TERRITORIOS||[]);
+const UF_DE={'Alagoas':'AL','Bahia':'BA','Ceará':'CE','Maranhão':'MA','Paraíba':'PB','Pernambuco':'PE','Piauí':'PI','Rio Grande do Norte':'RN','Sergipe':'SE'};
+const HOM=['Sim','Não','Não sei'];
+const COR_HOM={'Sim':'#2a78d6','Não':'#ec835a','Não sei':'#c9c8c2'};
+const COR_NA='#eef1f6';
+/* Bloco B – situação da rede */
+const SITS=[['constituida','Rede constituída','#178a3b'],['nao_iniciada','Articulação ainda não iniciada','#cde2fb'],['iniciada','Articulação iniciada','#8fbbf2'],
+            ['definicao','Em definição das instituições participantes','#3f86e0'],['pactuacao','Em pactuação/formalização','#16438f'],['nao_sei','Não sei/preciso confirmar','#c9c8c2']];
+const sitPorRotulo=Object.fromEntries(SITS.map(([k,l])=>[l,k]));
+const REDE_VALIDA=['definicao','pactuacao','constituida'];           // etapas em que se registra a validação no colegiado
+const VAL_REDE=[['validada','Validada pelo colegiado','#178a3b'],['aguardando','Apresentada, aguardando validação','#f2b84b'],['nao_apresentada','Ainda não apresentada','#ec835a'],
+                ['sem_colegiado','Não há colegiado territorial ativo','#8e6bbf'],['nao_sei','Não sei/preciso confirmar','#c9c8c2']];
+/* Bloco C – Plano Safra Territorial */
+const SITS_PST=[['nao_previsto','Não previsto','#e3e6ec'],['nao_iniciado','Não iniciado','#cde2fb'],['em_elaboracao','Em elaboração','#8fbbf2'],
+                ['concluido','Concluído','#16438f'],['em_implementacao','Em implementação','#178a3b'],['nao_sei','Não sei/preciso confirmar','#c9c8c2']];
+const pstPorRotulo=Object.fromEntries(SITS_PST.map(([k,l])=>[l,k]));
+const PST_VALIDA=['concluido','em_implementacao'];
+const PST_CADEIAS=['em_elaboracao','concluido','em_implementacao'];
+const VAL_PST=[['validada','Validado pelo colegiado','#178a3b'],['aguardando','Apresentado, aguardando validação','#f2b84b'],['nao_apresentada','Ainda não apresentado','#ec835a'],
+               ['sem_colegiado','Não há colegiado territorial ativo','#8e6bbf'],['nao_sei','Não sei/preciso confirmar','#c9c8c2']];
+const CADEIAS=['Arroz','Feijão','Mandioca','Milho','Fruticultura','Hortaliças','Café','Cacau','Bovinocultura de leite','Bovinocultura de corte',
+  'Caprinocultura e ovinocultura','Avicultura e ovos','Suinocultura','Apicultura e meliponicultura','Pesca e aquicultura','Sociobiodiversidade e extrativismo',
+  'Produção agroecológica ou orgânica diversificada','Agroindustrialização familiar','Outra','Não sei/preciso confirmar'];
+const MAX_CADEIAS=5;
+let TERR_UF=[]; const MODO={B:'rede',C:'pst'};
+const terrDoEstado=est=>TERR.filter(t=>t.uf===UF_DE[est]);
+
+/* Lê uma linha da tabela no mesmo formato gravado na planilha */
+function lerTerr(t){
+  const c=t.cod, cad=v(`u_${c}_cad`);
+  return {homologado:v(`t_${c}_hom`), situacao_rede:v(`t_${c}_sit`), validacao_rede:v(`t_${c}_val`), previsao_proximo_ciclo:v(`t_${c}_prev`)?'Sim':'',
+          pst_situacao:v(`u_${c}_sit`), pst_validacao:v(`u_${c}_val`), pst_cadeias:Array.isArray(cad)?cad:[], pst_cadeias_outro:v(`u_${c}_cad_outro`)};
+}
+const exigeValRede=r=>REDE_VALIDA.includes(sitPorRotulo[r.situacao_rede]);
+const exigeValPst=r=>PST_VALIDA.includes(pstPorRotulo[r.pst_situacao]);
+const exigeCadeias=r=>PST_CADEIAS.includes(pstPorRotulo[r.pst_situacao]);
+
+/* Como cada visão do mapa pinta um território: devolve [cor, categoria] ou null (não preenchido) */
+const MODOS={
+  rede:{curto:'Situação da rede',longo:'Situação da Rede Territorial de ATER e Crédito',itens:SITS.map(([,l,c])=>[l,c]),
+    cor:r=>{const s=SITS.find(([,l])=>l===r.situacao_rede); return s?[s[2],s[1]]:null;}},
+  hom:{curto:'Homologação',longo:'Homologação nos Territórios da Cidadania',itens:[['Homologado',COR_HOM['Sim']],['Não homologado',COR_HOM['Não']],['Homologação: não sei',COR_HOM['Não sei']]],
+    cor:r=>COR_HOM[r.homologado]?[COR_HOM[r.homologado],r.homologado==='Sim'?'Homologado':r.homologado==='Não'?'Não homologado':'Homologação: não sei']:null},
+  val:{curto:'Validação da rede',longo:'Validação da rede no colegiado territorial',itens:[...VAL_REDE.map(([,l,c])=>[l,c]),['Não se aplica (etapa inicial da rede)',COR_NA]],
+    cor:r=>{if(!r.situacao_rede) return null; if(!exigeValRede(r)) return [COR_NA,'Não se aplica (etapa inicial da rede)'];
+      const x=VAL_REDE.find(([,l])=>l===r.validacao_rede); return x?[x[2],x[1]]:null;}},
+  pst:{curto:'Situação do PST',longo:'Situação do Plano Safra Territorial',itens:SITS_PST.map(([,l,c])=>[l,c]),
+    cor:r=>{const s=SITS_PST.find(([,l])=>l===r.pst_situacao); return s?[s[2],s[1]]:null;}},
+  pstval:{curto:'Validação do PST',longo:'Validação do PST no colegiado territorial',itens:[...VAL_PST.map(([,l,c])=>[l,c]),['Não se aplica (PST não concluído)',COR_NA]],
+    cor:r=>{if(!r.pst_situacao) return null; if(!exigeValPst(r)) return [COR_NA,'Não se aplica (PST não concluído)'];
+      const x=VAL_PST.find(([,l])=>l===r.pst_validacao); return x?[x[2],x[1]]:null;}}
+};
+const MODOS_BLOCO={B:['rede','hom','val'],C:['pst','pstval']};
+
+function totaisTerr(){
+  const o={total:TERR_UF.length,hom:0,hom_ns:0,rede:0,prev:0,sem:{},val:{},semValidacao:0,
+           pst:{},pstVal:{},pstPrevistos:0,pstValidaveis:0,cadeias:{},cadeiasOutro:[]};
+  SITS.forEach(([k])=>o.sem[k]=0); VAL_REDE.forEach(([k])=>o.val[k]=0); SITS_PST.forEach(([k])=>o.pst[k]=0); VAL_PST.forEach(([k])=>o.pstVal[k]=0);
+  TERR_UF.forEach(t=>{const x=lerTerr(t);
+    if(x.homologado==='Sim')o.hom++; if(x.homologado==='Não sei')o.hom_ns++;
+    const k=sitPorRotulo[x.situacao_rede]; if(k==='constituida')o.rede++; else if(k){o.sem[k]++; if(x.previsao_proximo_ciclo)o.prev++;}
+    if(exigeValRede(x)){const vk=(VAL_REDE.find(([,l])=>l===x.validacao_rede)||[])[0]; if(vk)o.val[vk]++; if(k==='constituida'&&vk!=='validada')o.semValidacao++;}
+    const pk=pstPorRotulo[x.pst_situacao]; if(pk){o.pst[pk]++; if(pk!=='nao_previsto')o.pstPrevistos++;}
+    if(exigeValPst(x)){o.pstValidaveis++; const vk=(VAL_PST.find(([,l])=>l===x.pst_validacao)||[])[0]; if(vk)o.pstVal[vk]++;}
+    if(exigeCadeias(x)){x.pst_cadeias.filter(c=>c!==NS).forEach(c=>o.cadeias[c]=(o.cadeias[c]||0)+1); if(x.pst_cadeias_outro)o.cadeiasOutro.push(`${t.nome}: ${x.pst_cadeias_outro}`);}
+  });
+  o.semRede=o.total-o.rede; return o;
+}
+
+/* ---- mapa interativo de um bloco ---- */
+const NS_SVG='http://www.w3.org/2000/svg';
+function montarMapa(bloco,estado,aoClicar){
+  const W=520,H=360, svg=document.createElementNS(NS_SVG,'svg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('role','img'); svg.setAttribute('aria-label','Mapa dos territórios do estado'); svg.style.overflow='hidden';
+  const bbE=bboxUF([UF_DE[estado]])||bboxLista(TERR_UF), proj=caminhosMapa(TERR_UF,W,H,10,bbE);
+  proj.itens.forEach(({t,d})=>{const p=document.createElementNS(NS_SVG,'path'); p.setAttribute('d',d); p.setAttribute('fill-rule','evenodd');
+    p.setAttribute('data-cod',t.cod); p.setAttribute('class','terr-poly terr-poly-'+bloco); p.append(document.createElementNS(NS_SVG,'title'));
+    p.addEventListener('click',()=>aoClicar(t)); svg.append(p);});
+  const g=document.createElementNS(NS_SVG,'g'); svg.append(g);
+  const camadas=()=>{g.innerHTML=''; desenharCamadas(g,proj.P,bbE,[],NS_SVG);}; camadas();
+  const tg=el('div',{class:'terr-toggle'},...MODOS_BLOCO[bloco].map((m,i)=>el('button',{type:'button','data-m':m,class:i?null:'ativo'},MODOS[m].curto)));
+  tg.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; MODO[bloco]=b.dataset.m; tg.querySelectorAll('button').forEach(x=>x.classList.toggle('ativo',x===b)); pintarMapas();});
+  const lado=el('div',{class:'terr-lado'},tg,controlesCamadas(camadas),el('div',{class:'terr-legenda',id:'leg'+bloco}),el('div',{class:'terr-totais',id:'tot'+bloco}));
+  return el('div',{class:'terr-topo'},el('div',{class:'terr-mapa'},svg),lado);
+}
+function irPara(prefixo,campo,t){const row=$(`#${prefixo}_${t.cod}`); if(!row) return; row.scrollIntoView({behavior:'smooth',block:'center'});
+  row.classList.add('pisca'); setTimeout(()=>row.classList.remove('pisca'),1200); const f=$(`[name="${campo}"]`); if(f) f.focus({preventScroll:true});}
+function selectSimples(name,rotulo,opcoes){return el('select',{name,'aria-label':rotulo},el('option',{value:''},'Selecione…'),...opcoes.map(o=>el('option',{value:o},o)));}
+
 function renderTerritorios(estado){
   TERR_UF=terrDoEstado(estado);
-  const box=$('#terrBox'); if(!box) return; box.innerHTML='';
-  if(!TERR_UF.length){box.append(el('p',{class:'aviso'},'Não foi possível carregar a lista de territórios. Recarregue a página.'));return;}
-  // mapa
-  const topo=el('div',{class:'terr-topo'});
-  const mapa=el('div',{class:'terr-mapa'});
-  const W=520,H=360, NS_SVG='http://www.w3.org/2000/svg', svg=document.createElementNS(NS_SVG,'svg');
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('role','img'); svg.setAttribute('aria-label','Mapa dos territórios do estado');
-  const bbE=bboxUF([UF_DE[estado]])||bboxLista(TERR_UF); const proj=caminhosMapa(TERR_UF,W,H,10,bbE);
-  svg.style.overflow='hidden';
-  proj.itens.forEach(({t,d})=>{const pth=document.createElementNS(NS_SVG,'path'); pth.setAttribute('d',d); pth.setAttribute('fill-rule','evenodd');
-    pth.setAttribute('data-cod',t.cod); pth.setAttribute('class','terr-poly'); const tt=document.createElementNS(NS_SVG,'title'); pth.append(tt);
-    pth.addEventListener('click',()=>{const row=$(`#tr_${t.cod}`); row.scrollIntoView({behavior:'smooth',block:'center'}); row.classList.add('pisca'); setTimeout(()=>row.classList.remove('pisca'),1200); $(`[name="t_${t.cod}_sit"]`).focus({preventScroll:true});});
-    svg.append(pth);});
-  const camadasG=document.createElementNS(NS_SVG,'g'); svg.append(camadasG);
-  const redesenharCamadas=()=>{camadasG.innerHTML=''; desenharCamadas(camadasG,proj.P,bbE,[],NS_SVG);};
-  redesenharCamadas();
-  mapa.append(svg);
-  const lado=el('div',{class:'terr-lado'});
-  const tg=el('div',{class:'terr-toggle'},el('button',{type:'button','data-modo':'rede',class:'ativo'},'Situação da rede'),el('button',{type:'button','data-modo':'hom'},'Homologação'));
-  tg.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; modoMapa=b.dataset.modo; $$('.terr-toggle button').forEach(x=>x.classList.toggle('ativo',x===b)); pintarMapa();});
-  lado.append(tg, controlesCamadas(redesenharCamadas), el('div',{class:'terr-legenda',id:'terrLegenda'}), el('div',{class:'terr-totais',id:'terrTotais'}));
-  topo.append(mapa,lado); box.append(topo);
-  // tabela
-  const tab=el('table',{class:'terr-tab'});
-  tab.innerHTML='<thead><tr><th>Território</th><th>Homologado nos Territórios da Cidadania?</th><th>Situação da rede</th><th>Previsão de constituir até o fim do próximo quadrimestre</th></tr></thead>';
+  const boxB=$('#terrBox'), boxC=$('#pstBox'); if(!boxB||!boxC) return; boxB.innerHTML=''; boxC.innerHTML='';
+  if(!TERR_UF.length){[boxB,boxC].forEach(b=>b.append(el('p',{class:'aviso'},'Não foi possível carregar a lista de territórios. Recarregue a página.')));return;}
+  // ---------- Bloco B: redes ----------
+  boxB.append(montarMapa('B',estado,t=>irPara('tr','t_'+t.cod+'_sit',t)));
   const tb=el('tbody');
-  TERR_UF.forEach(t=>{
-    const tr=el('tr',{id:'tr_'+t.cod});
-    tr.append(el('td',{},el('b',{},t.nome),el('span',{class:'terr-mun'},`${t.municipios} municípios`)));
-    const sh=el('select',{name:`t_${t.cod}_hom`,'aria-label':`Homologação – ${t.nome}`},el('option',{value:''},'Selecione…'),...HOM.map(h=>el('option',{value:h},h)));
-    const ss=el('select',{name:`t_${t.cod}_sit`,'aria-label':`Situação da rede – ${t.nome}`},el('option',{value:''},'Selecione…'),...SITS.map(([k,l])=>el('option',{value:l},l)));
-    tr.append(el('td',{},sh), el('td',{},ss), el('td',{class:'terr-prev'},el('label',{class:'ns'},el('input',{type:'checkbox',name:`t_${t.cod}_prev`,value:'sim'}),'Sim')));
-    tb.append(tr);
-  });
-  tab.append(tb); box.append(el('div',{class:'terr-tabwrap'},tab));
+  TERR_UF.forEach(t=>{const c=t.cod;
+    tb.append(el('tr',{id:'tr_'+c},
+      el('td',{},el('b',{},t.nome),el('span',{class:'terr-mun'},`${t.municipios} municípios`)),
+      el('td',{},selectSimples(`t_${c}_hom`,`Homologação – ${t.nome}`,HOM)),
+      el('td',{},selectSimples(`t_${c}_sit`,`Situação da rede – ${t.nome}`,SITS.map(x=>x[1]))),
+      el('td',{},selectSimples(`t_${c}_val`,`Validação da rede no colegiado – ${t.nome}`,VAL_REDE.map(x=>x[1]))),
+      el('td',{class:'terr-prev'},el('label',{class:'ns'},el('input',{type:'checkbox',name:`t_${c}_prev`,value:'sim'}),'Sim'))));});
+  const tabB=el('table',{class:'terr-tab'}); tabB.innerHTML='<thead><tr><th>Território</th><th>Homologado nos Territórios da Cidadania?</th><th>Situação da rede</th><th>Validação da rede no colegiado territorial</th><th>Previsão de constituir até o fim do próximo quadrimestre</th></tr></thead>';
+  tabB.append(tb); boxB.append(el('div',{class:'terr-tabwrap'},tabB));
+  // ---------- Bloco C: Planos Safras Territoriais ----------
+  boxC.append(montarMapa('C',estado,t=>irPara('pr','u_'+t.cod+'_sit',t)));
+  const tc=el('tbody');
+  TERR_UF.forEach(t=>{const c=t.cod;
+    const lista=el('div',{class:'cad-lista'},...CADEIAS.map(x=>el('label',{},el('input',{type:'checkbox',name:`u_${c}_cad`,value:x,'data-multi':'1'}),x)),
+      el('input',{type:'text',name:`u_${c}_cad_outro`,class:'cad-outro hidden',placeholder:'Especifique a(s) outra(s) cadeia(s)'}));
+    const det=el('details',{class:'cad',id:'cad_'+c},el('summary',{},'Selecionar cadeias'),lista);
+    tc.append(el('tr',{id:'pr_'+c},
+      el('td',{},el('b',{},t.nome),el('span',{class:'terr-mun'},`${t.municipios} municípios`)),
+      el('td',{},selectSimples(`u_${c}_sit`,`Situação do PST – ${t.nome}`,SITS_PST.map(x=>x[1]))),
+      el('td',{},selectSimples(`u_${c}_val`,`Validação do PST no colegiado – ${t.nome}`,VAL_PST.map(x=>x[1]))),
+      el('td',{class:'cad-td'},det,el('span',{class:'cad-na'},'—'))));});
+  const tabC=el('table',{class:'terr-tab pst-tab'}); tabC.innerHTML=`<thead><tr><th>Território</th><th>Situação do Plano Safra Territorial</th><th>Validação do PST no colegiado territorial</th><th>Principais cadeias produtivas do PST (até ${MAX_CADEIAS})</th></tr></thead>`;
+  tabC.append(tc); boxC.append(el('div',{class:'terr-tabwrap'},tabC));
 }
-function pintarMapa(){
-  const leg=$('#terrLegenda'); if(!leg) return;
-  const itens=modoMapa==='rede'?SITS.map(([k,l,c])=>[l,c]):HOM.map(h=>[h==='Sim'?'Homologado':h==='Não'?'Não homologado':'Não sei',COR_HOM[h]]);
-  leg.innerHTML=itens.map(([l,c])=>`<span><i style="background:${c}"></i>${esc(l)}</span>`).join('')+'<span><i class="vazio"></i>Não preenchido</span>';
-  TERR_UF.forEach(t=>{const x=lerTerr(t), pth=$(`.terr-poly[data-cod="${t.cod}"]`); if(!pth) return;
-    let cor=null, desc='';
-    if(modoMapa==='rede'){const s=SITS.find(([,l])=>l===x.sit); cor=s?s[2]:null; desc=x.sit||'não preenchido'; if(x.prev&&sitPorRotulo[x.sit]!=='constituida') desc+=' · previsão até o próximo quadrimestre';}
-    else {cor=COR_HOM[x.hom]||null; desc=x.hom==='Sim'?'homologado':x.hom==='Não'?'não homologado':x.hom==='Não sei'?'homologação: não sei':'não preenchido';}
-    pth.style.fill=cor||'#ffffff'; pth.querySelector('title').textContent=`${t.nome} (${t.municipios} municípios): ${desc}`;});
+
+/* Habilita/desabilita campos conforme a etapa e repinta os mapas (chamado a cada alteração) */
+function atualizarTerritorios(){
+  TERR_UF.forEach(t=>{const c=t.cod, x=lerTerr(t);
+    const prev=$(`[name="t_${c}_prev"]`), val=$(`[name="t_${c}_val"]`); if(!prev) return;
+    const offPrev=!x.situacao_rede||sitPorRotulo[x.situacao_rede]==='constituida'; prev.disabled=offPrev; if(offPrev) prev.checked=false;
+    const offVal=!exigeValRede(x); val.disabled=offVal; if(offVal) val.value='';
+    $('#tr_'+c).classList.toggle('terr-ok',!!(x.homologado&&x.situacao_rede&&(offVal||x.validacao_rede)));
+    const pv=$(`[name="u_${c}_val"]`); const offPv=!exigeValPst(x); pv.disabled=offPv; if(offPv) pv.value='';
+    const det=$('#cad_'+c), na=det.nextElementSibling, cadOn=exigeCadeias(x);
+    det.classList.toggle('hidden',!cadOn); na.classList.toggle('hidden',cadOn);
+    if(!cadOn){ins(`u_${c}_cad`).forEach(i=>i.checked=false); $(`[name="u_${c}_cad_outro"]`).value='';}
+    const sel=lerTerr(t).pst_cadeias;
+    $(`[name="u_${c}_cad_outro"]`).classList.toggle('hidden',!sel.includes('Outra'));
+    det.querySelector('summary').textContent=sel.length?`${sel.length>2?sel.slice(0,2).join(', ')+` +${sel.length-2}`:sel.join(', ')} (${sel.filter(s=>s!==NS).length}/${MAX_CADEIAS})`:'Selecionar cadeias';
+    det.classList.toggle('cad-excesso',sel.filter(s=>s!==NS).length>MAX_CADEIAS);
+    $('#pr_'+c).classList.toggle('terr-ok',!!(x.pst_situacao&&(offPv||x.pst_validacao)&&(!cadOn||sel.length)));
+  });
+  pintarMapas();
+}
+function pintarMapas(){
+  if(!$('#legB')) return;
+  ['B','C'].forEach(bl=>{const m=MODOS[MODO[bl]];
+    $('#leg'+bl).innerHTML=m.itens.map(([l,c])=>`<span><i style="background:${c}"></i>${esc(l)}</span>`).join('')+'<span><i class="vazio"></i>Não preenchido</span>';
+    TERR_UF.forEach(t=>{const p=$(`.terr-poly-${bl}[data-cod="${t.cod}"]`); if(!p) return; const r=m.cor(lerTerr(t));
+      p.style.fill=r?r[0]:'#ffffff'; p.querySelector('title').textContent=`${t.nome} (${t.municipios} municípios): ${r?r[1]:'não preenchido'}`;});});
   const o=totaisTerr();
   const semTxt=SITS.filter(([k])=>k!=='constituida'&&o.sem[k]).map(([k,l])=>`${l.toLowerCase()}: ${o.sem[k]}`).join(' · ');
-  $('#terrTotais').innerHTML=`<div><span>4. Territórios</span><b>${o.total}</b></div><div><span>5. Homologados</span><b>${o.hom}</b>${o.hom_ns?`<small>${o.hom_ns} sem confirmação</small>`:''}</div>
-   <div><span>6. Com rede constituída</span><b>${o.rede}</b></div><div><span>7. Sem rede</span><b>${o.semRede}</b></div>
-   <div class="largo"><span>8. Sem rede por situação</span><small>${semTxt||'—'}</small></div><div class="largo"><span>9. Previsão até o próximo quadrimestre</span><b>${o.prev}</b></div>`;
+  const valTxt=VAL_REDE.filter(([k])=>o.val[k]).map(([k,l])=>`${l.toLowerCase()}: ${o.val[k]}`).join(' · ');
+  $('#totB').innerHTML=`<div><span>4. Territórios</span><b>${o.total}</b></div><div><span>5. Homologados</span><b>${o.hom}</b>${o.hom_ns?`<small>${o.hom_ns} sem confirmação</small>`:''}</div>
+   <div><span>6. Com rede constituída</span><b>${o.rede}</b>${o.semValidacao?`<small>${o.semValidacao} sem validação no colegiado</small>`:''}</div><div><span>7. Sem rede</span><b>${o.semRede}</b></div>
+   <div class="largo"><span>8. Sem rede por situação</span><small>${semTxt||'—'}</small></div>
+   <div class="largo"><span>Validação das redes no colegiado</span><small>${valTxt||'—'}</small></div>
+   <div class="largo"><span>9. Previsão até o próximo quadrimestre</span><b>${o.prev}</b></div>`;
+  const pstTxt=SITS_PST.filter(([k])=>o.pst[k]).map(([k,l])=>`${l.toLowerCase()}: ${o.pst[k]}`).join(' · ');
+  const topCad=Object.entries(o.cadeias).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([c,n])=>`${c} (${n})`).join(' · ');
+  $('#totC').innerHTML=`<div><span>11. PST previstos</span><b>${o.pstPrevistos}</b></div><div><span>Validados no colegiado</span><b>${o.pstVal.validada}</b><small>de ${o.pstValidaveis} concluídos ou em implementação</small></div>
+   <div class="largo"><span>12. PST por situação</span><small>${pstTxt||'—'}</small></div>
+   <div class="largo"><span>12.1 Cadeias mais citadas</span><small>${esc(topCad)||'—'}</small></div>`;
 }
 
 /* ============ HELPERS ============ */
@@ -444,20 +549,9 @@ const BLOCOS = [
     exclusivos:['Não há dificuldades relevantes'], outro:'Outro'}
  ]},
  {id:'Cs', nav:'C · Planos Safras', titulo:'Bloco C — Planos Safras Territoriais', perguntas:[
-  {id:'q11_pst_previstos', num:11, tipo:'number', req:true, ns:true, label:'Quantos Planos Safras Territoriais estão previstos para o estado?'},
-  {id:'q12_pst', num:12, tipo:'numgrid', req:true, label:'Informe a quantidade de Planos Safras Territoriais em cada situação.', help:'Use 0 quando não houver planos na situação.',
-    campos:[['nao_iniciados','Não iniciados'],['em_elaboracao','Em elaboração'],['concluidos','Concluídos'],['em_implementacao','Em implementação/acompanhamento'],['sem_previsao','Sem previsão definida'],['nao_sei','Não sei/preciso confirmar']]},
-  {id:'q12_justificativa', tipo:'textarea', req:true, curto:true, label:'A soma das situações (pergunta 12) é diferente do total previsto (pergunta 11). Explique brevemente a diferença.',
-    showIf:()=>{const t=n('q11_pst_previstos'); if(t==null||isNS('q11_pst_previstos'))return false; const c=BLOCOS[3].perguntas[1].campos; const vals=c.map(([k])=>n('q12_pst__'+k)); if(vals.every(x=>x==null))return false; return vals.reduce((s,x)=>s+(x||0),0)!==t;}},
-  {id:'q12b_cadeias_produtivas', num:'12.1', tipo:'checkbox', req:true, col:true, maxSel:5,
-    label:'Quais são as principais cadeias produtivas contempladas nos Planos Safras Territoriais do estado?',
-    help:'Considere os planos concluídos, em elaboração ou em implementação. Marque até 5 cadeias.',
-    opcoes:['Arroz','Feijão','Mandioca','Milho','Fruticultura','Hortaliças','Café','Cacau',
-            'Bovinocultura de leite','Bovinocultura de corte','Caprinocultura e ovinocultura','Avicultura e ovos','Suinocultura',
-            'Apicultura e meliponicultura','Pesca e aquicultura','Sociobiodiversidade e extrativismo','Produção agroecológica ou orgânica diversificada',
-            'Agroindustrialização familiar','Outra',NS],
-    exclusivos:[NS], outro:'Outra', outroLabel:'Especifique a(s) outra(s) cadeia(s)',
-    showIf:()=>isNS('q11_pst_previstos')||n('q11_pst_previstos')>0},
+  {id:'pst', num:'11–12.1', tipo:'pst', req:true,
+    label:'Para cada território, indique a situação do Plano Safra Territorial (PST), a validação no colegiado territorial e as principais cadeias produtivas do plano.',
+    help:'A validação é pedida para PST concluído ou em implementação; as cadeias, para PST em elaboração, concluído ou em implementação (até 5 por plano). Os totais das perguntas 11, 12 e 12.1 são calculados automaticamente.'},
   {id:'q13_integracao_plano_safra', num:13, tipo:'radio', req:true, label:'Há articulação para integrar a metodologia dos Planos Safras Territoriais ao planejamento de ATER/crédito e ao Plano Safra nacional?',
     opcoes:['Sim, já ocorre','Em construção','Ainda não',NS]}
  ]},
@@ -526,6 +620,7 @@ function renderPergunta(q,primeira){
     case 'prioridades': [1,2,3].forEach(i=>w.append(el('input',{type:'text',name:q.id+'_'+i,placeholder:'Prioridade '+i,style:'margin-bottom:6px'}))); break;
     case 'projetos': PROJETOS.forEach(p=>w.append(renderProjeto(p))); break;
     case 'territorios': w.append(el('div',{id:'terrBox'})); break;
+    case 'pst': w.append(el('div',{id:'pstBox'})); break;
   }
   w.append(el('div',{class:'erro'}));
   return w;
@@ -567,7 +662,7 @@ function render(){
 function exclusividade(e){
   const t=e.target; if(t.type!=='checkbox'||!t.dataset.multi||!t.checked) return;
   const q=TODAS.find(q=>q.id===t.name);
-  const excl=q?(q.exclusivos||[]):(t.name.endsWith('__fontes')?['Ainda sem fonte definida',NS]:[]);
+  const excl=q?(q.exclusivos||[]):(t.name.endsWith('__fontes')?['Ainda sem fonte definida',NS]:/^u_\d+_cad$/.test(t.name)?[NS]:[]);
   ins(t.name).forEach(o=>{ if(o===t) return; if(excl.includes(t.value)||excl.includes(o.value)) o.checked=false; });
 }
 function atualizar(){
@@ -582,10 +677,7 @@ function atualizar(){
     $$('[data-papel]',c).forEach(d=>d.classList.toggle('hidden',!has(`p_${id}__fontes`,d.dataset.papel)));
     $(`[name="p_${id}__fontes_outro"]`,c).classList.toggle('hidden',!has(`p_${id}__fontes`,'Outra fonte'));
   });
-  TERR_UF.forEach(t=>{const sit=v(`t_${t.cod}_sit`), c=$(`[name="t_${t.cod}_prev"]`); if(!c) return;
-    const off=!sit||sitPorRotulo[sit]==='constituida'; c.disabled=off; if(off) c.checked=false;
-    $('#tr_'+t.cod).classList.toggle('terr-ok',!!(v(`t_${t.cod}_hom`)&&sit));});
-  pintarMapa();
+  atualizarTerritorios();
   const nome=v('q14_projetos_outro'); $('.nome-outro').textContent=nome?`Outro projeto indutor: ${nome}`:'Outro projeto indutor';
   // progresso
   let tot=0,ok=0;
@@ -630,10 +722,25 @@ function validar(q){
     case 'prioridades': return '';
     case 'territorios':{
       if(!TERR_UF.length) return 'Lista de territórios indisponível. Recarregue a página.';
-      const falta=TERR_UF.filter(t=>{const x=lerTerr(t); return !x.hom||!x.sit;});
-      $$('.terr-tab tr.falta').forEach(r=>r.classList.remove('falta'));
+      const falta=TERR_UF.filter(t=>{const x=lerTerr(t); return !x.homologado||!x.situacao_rede||(exigeValRede(x)&&!x.validacao_rede);});
+      $$('#terrBox tr.falta').forEach(r=>r.classList.remove('falta'));
       if(falta.length){ if($('#q_territorios').classList.contains('invalido')||q._mostrar) falta.forEach(t=>$('#tr_'+t.cod).classList.add('falta'));
-        return `Preencha a homologação e a situação da rede de todos os territórios. Faltam ${falta.length}: ${falta.slice(0,4).map(t=>t.nome).join(', ')}${falta.length>4?'…':''}.`; }
+        return `Preencha a homologação, a situação da rede e, quando pedida, a validação no colegiado de todos os territórios. Faltam ${falta.length}: ${falta.slice(0,4).map(t=>t.nome).join(', ')}${falta.length>4?'…':''}.`; }
+      return '';}
+    case 'pst':{
+      if(!TERR_UF.length) return 'Lista de territórios indisponível. Recarregue a página.';
+      const prob=[];
+      TERR_UF.forEach(t=>{const x=lerTerr(t), sem=x.pst_cadeias.filter(c=>c!==NS);
+        let m='';
+        if(!x.pst_situacao) m='situação do PST';
+        else if(exigeValPst(x)&&!x.pst_validacao) m='validação no colegiado';
+        else if(exigeCadeias(x)&&!x.pst_cadeias.length) m='cadeias produtivas';
+        else if(sem.length>MAX_CADEIAS) m=`no máximo ${MAX_CADEIAS} cadeias`;
+        else if(x.pst_cadeias.includes('Outra')&&!x.pst_cadeias_outro) m='especificar a outra cadeia';
+        if(m) prob.push([t,m]);});
+      $$('#pstBox tr.falta').forEach(r=>r.classList.remove('falta'));
+      if(prob.length){ if($('#q_pst').classList.contains('invalido')||q._mostrar) prob.forEach(([t])=>$('#pr_'+t.cod).classList.add('falta'));
+        return `Complete os Planos Safras de todos os territórios. Pendências (${prob.length}): ${prob.slice(0,4).map(([t,m])=>`${t.nome} – ${m}`).join('; ')}${prob.length>4?'…':''}.`; }
       return '';}
     default: return q.req&&!v(q.id)?'Campo obrigatório.':'';
   }
@@ -643,7 +750,7 @@ function marcar(q,msg){const w=$('#q_'+q.id);w.classList.toggle('invalido',!!msg
 /* ============ COLETA ============ */
 function coletar(){
   const r={ciclo:'',versao_formulario:CONFIG.VERSAO,periodicidade:CONFIG.PERIODICIDADE};
-  const projetos=[], territorios=[];
+  const projetos=[], territorios=[], porCod={};
   TODAS.forEach(q=>{
     const vis=visivel(q), id=q.id;
     switch(q.tipo){
@@ -665,8 +772,25 @@ function coletar(){
           r.q06_redes_constituidas=o.rede; r.q07_territorios_sem_rede=o.semRede;
           SITS.filter(([k])=>k!=='constituida').forEach(([k])=>r['q08_sem_rede_'+k]=o.sem[k]);
           r.q09_previsao_proximo_ciclo=o.prev;
-          TERR_UF.forEach(t=>{const x=lerTerr(t); territorios.push({cod_territorio:t.cod,territorio:t.nome,uf:t.uf,homologado:x.hom,situacao_rede:x.sit,
-            previsao_proximo_ciclo:(x.prev&&sitPorRotulo[x.sit]!=='constituida')?'Sim':''});});
+          VAL_REDE.forEach(([k])=>r['q09v_rede_'+k]=o.val[k]); r.q09v_rede_constituidas_sem_validacao=o.semValidacao;
+          TERR_UF.forEach(t=>{const x=lerTerr(t);
+            const row={cod_territorio:t.cod,territorio:t.nome,uf:t.uf,homologado:x.homologado,situacao_rede:x.situacao_rede,
+              validacao_rede:exigeValRede(x)?x.validacao_rede:'',previsao_proximo_ciclo:(x.previsao_proximo_ciclo&&sitPorRotulo[x.situacao_rede]!=='constituida')?'Sim':'',
+              pst_situacao:'',pst_validacao:'',pst_cadeias:'',pst_cadeias_outro:''};
+            porCod[t.cod]=row; territorios.push(row);});
+          break;}
+      case 'pst':{
+          const o=totaisTerr();
+          r.q11_pst_previstos=o.pstPrevistos;
+          const mapa={nao_iniciados:'nao_iniciado',em_elaboracao:'em_elaboracao',concluidos:'concluido',em_implementacao:'em_implementacao',sem_previsao:'nao_previsto',nao_sei:'nao_sei'};
+          Object.entries(mapa).forEach(([col,k])=>r['q12_pst_'+col]=o.pst[k]);
+          VAL_PST.forEach(([k])=>r['q12v_pst_'+k]=o.pstVal[k]); r.q12v_pst_validaveis=o.pstValidaveis;
+          const cads=[...new Set(TERR_UF.flatMap(t=>{const x=lerTerr(t); return exigeCadeias(x)?x.pst_cadeias:[];}))];
+          r.q12b_cadeias_produtivas=CADEIAS.filter(c=>cads.includes(c)).join('; '); r.q12b_cadeias_produtivas_outro=o.cadeiasOutro.join(' | ');
+          TERR_UF.forEach(t=>{const x=lerTerr(t), row=porCod[t.cod]||(porCod[t.cod]={cod_territorio:t.cod,territorio:t.nome,uf:t.uf});
+            if(!territorios.includes(row)) territorios.push(row);
+            row.pst_situacao=x.pst_situacao; row.pst_validacao=exigeValPst(x)?x.pst_validacao:'';
+            row.pst_cadeias=exigeCadeias(x)?x.pst_cadeias.join('; '):''; row.pst_cadeias_outro=exigeCadeias(x)&&x.pst_cadeias.includes('Outra')?x.pst_cadeias_outro:'';});
           break;}
       default: r[id]=vis?v(id):'';
     }
@@ -738,7 +862,16 @@ function linhasComprovante(payload){
             ['8. Territórios sem rede por situação',SITS.filter(([k])=>k!=='constituida').map(([k,l])=>`${l}: <b>${r['q08_sem_rede_'+k]||0}</b>`).join('<br>')],
             ['9. Com previsão de constituir a rede até o fim do próximo quadrimestre',r.q09_previsao_proximo_ciclo]];
           tot.forEach(([a,b])=>linhas.push([esc(a),String(b)]));
-          (payload.territorios||[]).forEach((t,i)=>linhas.push([`<span class="terr-comp">${i+1}. ${esc(t.territorio)}</span>`,`${esc(t.situacao_rede)}${t.previsao_proximo_ciclo?' · <i>previsão até o próximo quadrimestre</i>':''}<br><small>Homologado: ${esc(t.homologado)}</small>`]));
+          linhas.push(['Validação das redes no colegiado territorial (redes em definição, em pactuação ou constituídas)',VAL_REDE.map(([k,l])=>`${l}: <b>${r['q09v_rede_'+k]||0}</b>`).join('<br>')+(r.q09v_rede_constituidas_sem_validacao?`<br><i>Redes constituídas sem validação: ${r.q09v_rede_constituidas_sem_validacao}</i>`:'')]);
+          (payload.territorios||[]).forEach((t,i)=>linhas.push([`<span class="terr-comp">${i+1}. ${esc(t.territorio)}</span>`,`${esc(t.situacao_rede)}${t.previsao_proximo_ciclo?' · <i>previsão até o próximo quadrimestre</i>':''}<br><small>Homologado: ${esc(t.homologado)}${t.validacao_rede?` · Validação: ${esc(t.validacao_rede)}`:''}</small>`]));
+          break;}
+        case 'pst':{
+          linhas.push(['11. Planos Safras Territoriais previstos',String(r.q11_pst_previstos)]);
+          linhas.push(['12. PST por situação',SITS_PST.map(([k,l])=>{const col={nao_iniciado:'nao_iniciados',em_elaboracao:'em_elaboracao',concluido:'concluidos',em_implementacao:'em_implementacao',nao_previsto:'sem_previsao',nao_sei:'nao_sei'}[k]; return `${l}: <b>${r['q12_pst_'+col]||0}</b>`;}).join('<br>')]);
+          linhas.push(['Validação dos PST no colegiado territorial (concluídos ou em implementação)',VAL_PST.map(([k,l])=>`${l}: <b>${r['q12v_pst_'+k]||0}</b>`).join('<br>')]);
+          linhas.push(['12.1 Cadeias produtivas citadas nos PST',r.q12b_cadeias_produtivas?esc(r.q12b_cadeias_produtivas).split('; ').join('<br>'):'<span class="nao-inf">Nenhuma</span>']);
+          (payload.territorios||[]).forEach((t,i)=>linhas.push([`<span class="terr-comp">${i+1}. ${esc(t.territorio)}</span>`,
+            `PST: ${esc(t.pst_situacao||'—')}${t.pst_validacao?` · ${esc(t.pst_validacao)}`:''}${t.pst_cadeias?`<br><small>Cadeias: ${esc(t.pst_cadeias)}${t.pst_cadeias_outro?` (${esc(t.pst_cadeias_outro)})`:''}</small>`:''}`]));
           break;}
         case 'projetos':
           payload.projetos.forEach(p=>{
@@ -754,33 +887,29 @@ function linhasComprovante(payload){
   });
   return blocos;
 }
-/* Mapas estáticos do estado para o comprovante (situação da rede e homologação), numerados como a lista */
-function mapaComprovante(payload){
+/* Mapas estáticos do estado para o comprovante, numerados como a lista do bloco */
+function mapaComprovante(payload,modos){
   const est=payload.respostas.q01_estado, lista=terrDoEstado(est); if(!lista.length) return null;
   const NSv='http://www.w3.org/2000/svg', porCod={}; (payload.territorios||[]).forEach(t=>porCod[Number(t.cod_territorio)]=t);
   const ordem=(payload.territorios||[]).map(t=>Number(t.cod_territorio));
   const bb=bboxUF([UF_DE[est]])||bboxLista(lista);
   const fig=el('div',{class:'comp-mapas'});
-  [['rede','Situação da Rede Territorial de ATER e Crédito'],['hom','Homologação nos Territórios da Cidadania']].forEach(([modo,tit])=>{
+  modos.forEach(modo=>{const M=MODOS[modo];
     const W=460,H=320, proj=caminhosMapa(lista,W,H,8,bb);
-    const svg=document.createElementNS(NSv,'svg'); svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('role','img'); svg.setAttribute('aria-label',`Mapa – ${tit}`); svg.style.overflow='hidden';
+    const svg=document.createElementNS(NSv,'svg'); svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('role','img'); svg.setAttribute('aria-label',`Mapa – ${M.longo}`); svg.style.overflow='hidden';
     const cont={};
-    proj.itens.forEach(({t,d})=>{const x=porCod[t.cod]||{};
-      let cor='#ffffff', cat='Não preenchido';
-      if(modo==='rede'){const sx=SITS.find(([,l])=>l===x.situacao_rede); if(sx){cor=sx[2];cat=sx[1];}}
-      else if(COR_HOM[x.homologado]){cor=COR_HOM[x.homologado];cat=x.homologado==='Sim'?'Homologado':x.homologado==='Não'?'Não homologado':'Homologação: não sei';}
+    proj.itens.forEach(({t,d})=>{const r=M.cor(porCod[t.cod]||{}); const cor=r?r[0]:'#ffffff', cat=r?r[1]:'Não preenchido';
       cont[cat]=cont[cat]||{cor,n:0}; cont[cat].n++;
       const pth=document.createElementNS(NSv,'path'); pth.setAttribute('d',d); pth.setAttribute('fill-rule','evenodd'); pth.setAttribute('fill',cor);
       pth.setAttribute('stroke','#5b6478'); pth.setAttribute('stroke-width','.8'); svg.append(pth);});
     desenharCamadas(svg,proj.P,bb,[],NSv);
-    // números dos territórios (mesma ordem da lista abaixo)
     proj.itens.forEach(({t})=>{const i=ordem.indexOf(t.cod); if(i<0) return;
       const ring=t.rings.reduce((a,r)=>r.length>a.length?r:a,[]); let sx=0,sy=0; ring.forEach(c=>{const [x,y]=proj.P(c); sx+=x; sy+=y;});
       const tx=document.createElementNS(NSv,'text'); tx.setAttribute('x',sx/ring.length); tx.setAttribute('y',sy/ring.length+5); tx.setAttribute('text-anchor','middle');
       tx.setAttribute('font-size','14'); tx.setAttribute('font-weight','700'); tx.setAttribute('fill','#14213d'); tx.setAttribute('stroke','#ffffff'); tx.setAttribute('stroke-width','3'); tx.setAttribute('paint-order','stroke');
       tx.textContent=String(i+1); svg.append(tx);});
     const leg=el('div',{class:'comp-leg'}); Object.entries(cont).forEach(([l,o])=>leg.append(el('span',{},el('i',{style:`background:${o.cor}`}),`${l}: ${o.n}`)));
-    fig.append(el('div',{class:'comp-mapa'},el('h4',{},tit),svg,leg));
+    fig.append(el('div',{class:'comp-mapa'},el('h4',{},M.longo),svg,leg));
   });
   fig.append(el('p',{class:'comp-nota'},'Os números no mapa correspondem à lista de territórios abaixo.'));
   return fig;
@@ -800,7 +929,8 @@ function mostrarSucesso(payload,protocolo,teste){
   s.append(ind);
   linhasComprovante(payload).forEach(([titulo,linhas])=>{
     const sec=el('section',{class:'comp-bloco'},el('h3',{},titulo));
-    if(titulo.startsWith('Bloco B')){const m=mapaComprovante(payload); if(m) sec.append(m);}
+    if(titulo.startsWith('Bloco B')){const m=mapaComprovante(payload,['rede','hom','val']); if(m) sec.append(m);}
+    if(titulo.startsWith('Bloco C')){const m=mapaComprovante(payload,['pst','pstval']); if(m) sec.append(m);}
     const tb=el('table');
     linhas.forEach(([a,b])=>{const tr=el('tr'); tr.append(el('td',{html:a})); tr.append(el('td',{html:b})); tb.append(tr);});
     sec.append(tb); s.append(sec);
@@ -935,8 +1065,9 @@ function preencher(r,projs,terrs){
     INTERNACIONAIS.forEach(org=>setCampo(`p_${P.id}__papel_${slug(org)}`,p['papel_'+slug(org)]));
   });
   (terrs||[]).forEach(t=>{ const c=Number(t.cod_territorio); if(!TERR_UF.some(x=>x.cod===c)) return;
-    setCampo(`t_${c}_hom`,t.homologado); setCampo(`t_${c}_sit`,t.situacao_rede);
-    const cb=$(`[name="t_${c}_prev"]`); if(cb) cb.checked=String(t.previsao_proximo_ciclo)==='Sim'; });
+    setCampo(`t_${c}_hom`,t.homologado); setCampo(`t_${c}_sit`,t.situacao_rede); setCampo(`t_${c}_val`,t.validacao_rede);
+    const cb=$(`[name="t_${c}_prev"]`); if(cb) cb.checked=String(t.previsao_proximo_ciclo)==='Sim';
+    setCampo(`u_${c}_sit`,t.pst_situacao); setCampo(`u_${c}_val`,t.pst_validacao); setCampo(`u_${c}_cad`,t.pst_cadeias); setCampo(`u_${c}_cad_outro`,t.pst_cadeias_outro); });
 }
 
 /* ============ INÍCIO ============ */
@@ -946,7 +1077,7 @@ const selCiclo=$('[name="ciclo"]');
 if(!CICLOS.some(c=>c.v===selCiclo.value)) selCiclo.value=CICLOS[CICLOS.length-1].v;
 function revalidar(e){ // reavalia o campo editado enquanto se digita (evita saltos de layout ao sair do campo)
   const nm=e.target.name||'';
-  const q=nm.startsWith('p_')?TODAS.find(q=>q.tipo==='projetos'):nm.startsWith('t_')?TODAS.find(q=>q.tipo==='territorios'):TODAS.find(q=>nm===q.id||nm.startsWith(q.id+'_'));
+  const q=nm.startsWith('p_')?TODAS.find(q=>q.tipo==='projetos'):nm.startsWith('t_')?TODAS.find(q=>q.tipo==='territorios'):nm.startsWith('u_')?TODAS.find(q=>q.tipo==='pst'):TODAS.find(q=>nm===q.id||nm.startsWith(q.id+'_'));
   if(q&&$('#q_'+q.id).classList.contains('invalido')) marcar(q,validar(q));
 }
 $('#form').addEventListener('input',e=>{exclusividade(e);atualizar();revalidar(e);salvarRascunho();});
